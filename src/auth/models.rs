@@ -6,12 +6,17 @@ use chrono::{DateTime, Utc};
 use chrono::serde::ts_seconds_option;
 use serde::{Deserialize};
 
+/// The base URL for Facebook's OAuth dialog.
 pub const OAUTH_BASE_URL: &str = "https://www.facebook.com";
 
-/// Facebook Graph API OAuth permissions.
+/// Facebook Graph API OAuth permission scopes.
+///
+/// These are the standard permissions your app can request during the
+/// Facebook Login flow. Pass a slice of these to
+/// [`AppClient::get_oauth_url`](crate::auth::AppClient::get_oauth_url).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumString)]
 pub enum AppPermission {
-    /// Basic profile information. This permission is granted by default.
+    /// Basic profile information. Granted by default.
     #[strum(serialize = "public_profile")]
     PublicProfile,
 
@@ -107,7 +112,7 @@ impl<'de> Deserialize<'de> for AppPermission {
     }
 }
 
-/// Facebook Login authorization flow modifiers.
+/// Modifiers for the Facebook Login re-authorization flow.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumString)]
 pub enum AppAuthType {
     /// Ask again for permissions that the user previously declined.
@@ -123,6 +128,22 @@ pub enum AppAuthType {
     Reauthenticate,
 }
 
+/// A Facebook access token with phantom-type markers for owner and lifetime.
+///
+/// The type parameters prevent accidentally using a token at the wrong scope:
+///
+/// - `O` — token owner (User, Page)
+/// - `L` — token lifetime (Short, Long)
+///
+/// Use the type aliases [`ShortLivedUserToken`], [`LongLivedUserToken`], or [`PageToken`]
+/// for convenience.
+///
+/// ```rust,no_run
+/// use facebook_sdk_rs::auth::{AccessToken, LongLivedUserToken};
+///
+/// let token: LongLivedUserToken = AccessToken::new("EA...abc123");
+/// assert_eq!(token.as_str(), "EA...abc123");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AccessToken<Owner, TokenLifetime> {
     value: String,
@@ -130,30 +151,39 @@ pub struct AccessToken<Owner, TokenLifetime> {
     _lifetime: PhantomData<TokenLifetime>
 }
 
+/// Phantom-type module for access token owners.
 pub mod token_owner {
+    /// Marker for user-scoped access tokens.
     #[derive(Debug, Clone, Copy)]
     pub struct User;
 
+    /// Marker for page-scoped access tokens.
     #[derive(Debug, Clone, Copy)]
     pub struct Page;
 }
 
+/// Phantom-type module for access token lifetimes.
 pub mod token_lifetime {
+    /// Marker for short-lived tokens (typically 1-2 hours).
     #[derive(Debug, Clone, Copy)]
     pub struct Short;
 
+    /// Marker for long-lived tokens (typically 60 days).
     #[derive(Debug, Clone, Copy)]
     pub struct Long;
 }
 
-pub type UserToken<L> = AccessToken<token_owner::User, L>;
+/// Short-lived user access token (1-2 hour expiry).
+pub type ShortLivedUserToken = AccessToken<token_owner::User, token_lifetime::Short>;
 
-pub type ShortLivedUserToken = UserToken<token_lifetime::Short>;
-pub type LongLivedUserToken = UserToken<token_lifetime::Long>;
+/// Long-lived user access token (60 day expiry).
+pub type LongLivedUserToken = AccessToken<token_owner::User, token_lifetime::Long>;
 
+/// Long-lived page access token.
 pub type PageToken = AccessToken<token_owner::Page, token_lifetime::Long>;
 
 impl<O, L> AccessToken<O, L> {
+    /// Creates a new access token from a string value.
     pub fn new(value: impl Into<String>) -> Self {
         Self {
             value: value.into(),
@@ -162,52 +192,62 @@ impl<O, L> AccessToken<O, L> {
         }
     }
 
+    /// Returns the token string.
     pub fn as_str(&self) -> &str {
         &self.value
     }
 }
 
-
+/// Metadata about an access token from the `/debug_token` endpoint.
+///
+///
+/// Returned by [`AppClient::debug_token`](crate::auth::AppClient::debug_token).
 #[derive(Debug, Clone, Deserialize)]
 pub struct AccessTokenInfo {
+    /// The app ID that owns this token.
     pub app_id: String,
+    /// The app name that owns this token.
     pub application: String,
+    /// The user ID the token belongs to (None for page tokens).
     pub user_id: Option<String>,
-
+    /// Token type (e.g. "USER", "PAGE", "APP").
     #[serde(rename = "type")]
     pub token_type: String,
-
+    /// Whether the token is currently valid.
     pub is_valid: bool,
-
+    /// When the token expires (None if never expires).
     #[serde(with = "ts_seconds_option")]
     pub expires_at: Option<DateTime<Utc>>,
-
+    /// When the token was issued.
     #[serde(with = "ts_seconds_option")]
     pub issued_at: Option<DateTime<Utc>>,
-
+    /// When the token's data access expires.
     #[serde(with = "ts_seconds_option")]
     pub data_access_expires_at: Option<DateTime<Utc>>,
-
+    /// Permissions granted to this token.
     pub scopes: Vec<AppPermission>,
 }
 
-
 impl AccessTokenInfo {
-    /// Returns true if the token has no valid data access window.
+    /// Returns `true` if the token's data access window has expired.
+    ///
+    /// After this date, the token can still be used but may not return
+    /// user-specific data depending on Facebook's data policies.
     pub fn is_data_access_expired(&self) -> bool {
         self.data_access_expires_at
             .map(|dt| dt <= Utc::now())
             .unwrap_or(true)
     }
 
-    /// Returns true if the token itself has expired (structural expiry).
+    /// Returns `true` if the token itself has structurally expired.
+    ///
+    /// A timestamp of 0 is Facebook's convention for "never expires"
+    /// (e.g., page tokens with eternal expiry).
     pub fn is_token_expired(&self) -> bool {
         match self.expires_at {
-            Some(dt) if dt.timestamp() == 0 => false, // Facebook convention: 0 = never expires
+            Some(dt) if dt.timestamp() == 0 => false,
             Some(dt) => dt <= Utc::now(),
             None => true,
         }
     }
 }
-
-

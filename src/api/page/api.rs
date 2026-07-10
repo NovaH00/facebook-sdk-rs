@@ -13,13 +13,32 @@ use crate::api::webhook::WebhookApi;
 
 use super::models::{Page, PageScopedUser};
 
-
+/// High-level API for managing Facebook Pages.
+///
+/// `PageApi` lists the user's managed Pages and provides factory methods for
+/// constructing Page-scoped APIs for posts, conversations, and webhooks.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// # use facebook_sdk_rs::api::page::PageApi;
+/// # use facebook_sdk_rs::graph::UserGraphClient;
+/// # let user_client: UserGraphClient = unimplemented!();
+/// let page_api = PageApi::new(&user_client);
+///
+/// let pages = page_api.collect_paginated_pages(None).await.unwrap();
+/// for page in &pages {
+///     let post_api = page_api.get_post_api(page).unwrap();
+///     // ...
+/// }
+/// ```
 #[derive(Debug, Clone)]
 pub struct PageApi {
     user_graph_client: UserGraphClient,
 }
 
 impl PageApi {
+    /// Creates a new `PageApi` from a user-scoped Graph client.
     pub fn new(
         user_graph_client: &UserGraphClient
     ) -> Self {
@@ -28,6 +47,11 @@ impl PageApi {
         }
     }
 
+    /// Fetches the first page of the user's managed Pages.
+    ///
+    /// Calls `GET /me/accounts`. Use [`next_paginated_pages`](Self::next_paginated_pages)
+    /// to fetch subsequent pages and [`collect_paginated_pages`](Self::collect_paginated_pages)
+    /// to fetch all pages at once.
     pub async fn first_paginated_pages(
         &self,
         limit: Option<u32>
@@ -46,6 +70,10 @@ impl PageApi {
             .await
     }
 
+    /// Fetches the next page of the user's managed Pages using cursor pagination.
+    ///
+    /// Pass the previous response as `current`. The `after` cursor is extracted
+    /// from `current.paging.cursors`.
     pub async fn next_paginated_pages(
         &self,
         limit: Option<u32>,
@@ -71,6 +99,10 @@ impl PageApi {
         request.send::<GraphConnection<Page>>().await
     }
 
+    /// Fetches all of the user's managed Pages, handling pagination automatically.
+    ///
+    /// Deduplicates results by Page ID. Pass `limit` to control page size (per
+    /// API request), or `None` for the default.
     pub async fn collect_paginated_pages(
         &self,
         limit: Option<u32>,
@@ -104,6 +136,11 @@ impl PageApi {
         Ok(all)
     }
 
+    /// Extracts a [`PageGraphClient`] from a Page (requires the Page's access token).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::MissingAccessToken`] if the Page has no `access_token`.
     pub fn get_graph_client(
         &self,
         page: &Page
@@ -119,33 +156,40 @@ impl PageApi {
         Ok(GraphClient::new(page_access_token))
     }
 
+    /// Creates a [`PostApi`] for managing the given Page's posts.
     pub fn get_post_api(
         &self,
         page: &Page
     ) -> Result<PostApi, GraphError> {
         let page_graph_client = self.get_graph_client(page)?;
-
         Ok(PostApi::new(page_graph_client))
     }
 
+    /// Creates a [`ConversationApi`] for reading the given Page's conversations.
+    ///
+    /// The returned API is scoped to the Page's ID, which is used to resolve
+    /// the conversation recipient (the other party, not the Page itself).
     pub fn get_conversation_api(
         &self,
         page: &Page
     ) -> Result<ConversationApi, GraphError> {
         let page_graph_client = self.get_graph_client(page)?;
-
         Ok(ConversationApi::new(page_graph_client, &page.id))
     }
 
+    /// Creates a [`WebhookApi`] for managing the given Page's webhook subscriptions.
     pub fn get_webhook_api(
         &self,
         page: &Page
     ) -> Result<WebhookApi, GraphError> {
         let page_graph_client = self.get_graph_client(page)?;
-
         Ok(WebhookApi::new(page_graph_client, &page.id))
     }
 
+    /// Looks up a user by their Page-scoped ID (PSID).
+    ///
+    /// Calls `GET /{psid}` with the user Graph client, returning Page-scoped
+    /// user information.
     pub async fn get_user_info(
         &self,
         uid: impl Into<String>

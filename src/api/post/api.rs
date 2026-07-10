@@ -1,4 +1,3 @@
-
 use crate::graph::{
     PageGraphClient,
     GraphConnection,
@@ -8,12 +7,31 @@ use crate::graph::{
 use super::models::Post;
 
 
+/// High-level API for reading a Page's posts.
+///
+/// Provides paginated access to `GET /me/posts` with automatic deduplication.
+/// For post operations (like, unlike, delete), use the [`PostOperations`](super::PostOperations)
+/// trait which is implemented by this type.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// # use facebook_sdk_rs::api::post::PostApi;
+/// # use facebook_sdk_rs::graph::PageGraphClient;
+/// # let client: PageGraphClient = unimplemented!();
+/// let post_api = PostApi::new(client);
+/// let posts = post_api.collect_paginated_posts(None).await.unwrap();
+/// for post in &posts {
+///     println!("{}", post.message.as_deref().unwrap_or("(no text)"));
+/// }
+/// ```
 #[derive(Debug, Clone)]
 pub struct PostApi {
     page_graph_client: PageGraphClient
 }
 
 impl PostApi {
+    /// Creates a new `PostApi` from a Page-scoped Graph client.
     pub fn new(
         page_graph_client: PageGraphClient
     ) -> Self {
@@ -22,6 +40,10 @@ impl PostApi {
         }
     }
 
+    /// Fetches the first page of the Page's posts.
+    ///
+    /// Calls `GET /me/posts`. Use [`next_paginated_posts`](Self::next_paginated_posts)
+    /// to fetch subsequent pages.
     pub async fn first_paginated_posts(
         &self,
         limit: Option<u32>
@@ -41,6 +63,7 @@ impl PostApi {
             .await
     }
 
+    /// Fetches the next page of the Page's posts using cursor pagination.
     pub async fn next_paginated_posts(
         &self,
         limit: Option<u32>,
@@ -67,6 +90,9 @@ impl PostApi {
         request.send::<GraphConnection<Post>>().await
     }
 
+    /// Fetches all of the Page's posts, handling pagination automatically.
+    ///
+    /// Deduplicates results by post ID.
     pub async fn collect_paginated_posts(
         &self,
         limit: Option<u32>,
@@ -100,5 +126,4 @@ impl PostApi {
 
         Ok(all)
     }
-
 }

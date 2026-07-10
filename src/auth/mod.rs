@@ -1,3 +1,13 @@
+//! OAuth 2.0 authentication and typed access tokens.
+//!
+//! This module provides the full Facebook Login flow:
+//!
+//! - [`AppClient`] — Manages app credentials, generates OAuth URLs, exchanges codes for tokens
+//! - [`AccessToken<O, L>`] — Phantom-typed token that tracks owner (User/Page) and lifetime (Short/Long)
+//! - [`LongLivedUserToken`] / [`ShortLivedUserToken`] — Convenience type aliases
+//! - [`AppPermission`] — Facebook OAuth permission scopes
+//! - [`AccessTokenInfo`] — Token introspection results from `/debug_token`
+
 mod client;
 mod models;
 mod schemas;

@@ -19,6 +19,33 @@ use super::{
     errors:: AuthError
 };
 
+/// Facebook OAuth client for managing app credentials and token exchange.
+///
+/// `AppClient` is the entry point for the Facebook Login flow. It holds your
+/// Facebook app's credentials and provides methods for:
+///
+/// - Generating OAuth consent URLs
+/// - Exchanging authorization codes for access tokens
+/// - Extending short-lived tokens to long-lived tokens
+/// - Debugging/inspecting any token
+///
+/// # Example
+///
+/// ```rust,no_run
+/// use facebook_sdk_rs::auth::{AppClient, AppPermission};
+///
+/// let app = AppClient::new(
+///     "123456789",
+///     "app-secret",
+///     "https://myapp.com/callback",
+/// );
+///
+/// let url = app.get_oauth_url(
+///     "random-state",
+///     &[AppPermission::PagesShowList],
+///     None,
+/// ).unwrap();
+/// ```
 #[derive(Debug, Clone)]
 pub struct AppClient {
     app_id: String,
@@ -31,6 +58,10 @@ pub struct AppClient {
 }
 
 impl AppClient {
+    /// Creates a new `AppClient` from Facebook app credentials.
+    ///
+    /// By default, the latest stable Graph API version is used. Use [`set_version`](Self::set_version)
+    /// to override it.
     pub fn new(
         app_id: impl Into<String>,
         app_secret: impl Into<String>,
@@ -47,11 +78,31 @@ impl AppClient {
         }
     }
 
+    /// Overrides the Graph API version used for all requests from this client.
+    ///
+    /// Defaults to the latest stable version. Call this immediately after `new()` to
+    /// pin a specific version.
     pub fn set_version(mut self, version: GraphVersion) -> Self {
         self.version = version;
         self
     }
 
+    /// Builds the Facebook OAuth consent URL to redirect users to.
+    ///
+    /// The user will see the Facebook Login dialog requesting the specified
+    /// [`AppPermission`] scopes. After they authorize, Facebook redirects to
+    /// the configured `redirect_url` with an authorization `code` that can be
+    /// exchanged via [`login`](Self::login).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AuthError::Url`] if the built URL is invalid.
+    ///
+    /// # Parameters
+    ///
+    /// * `state` — An opaque value the server uses to prevent CSRF attacks
+    /// * `scope` — List of permissions to request
+    /// * `auth_type` — Optional re-auth behavior (e.g. `Reauthenticate`)
     pub fn get_oauth_url(
         &self,
         state: impl Into<String>,
@@ -139,6 +190,19 @@ impl AppClient {
             .ok_or(AuthError::MissingAccessToken)
     }
 
+    /// Exchanges an authorization code for a long-lived user access token.
+    ///
+    /// This is a two-step process:
+    /// 1. Exchange the authorization code for a short-lived token
+    /// 2. Exchange the short-lived token for a long-lived token (60 days)
+    ///
+    /// Call this with the `code` query parameter received at your redirect URL
+    /// after the user authorizes your app.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AuthError::Request`] if the HTTP request fails, or
+    /// [`AuthError::MissingAccessToken`] if Facebook's response is missing the token.
     pub async fn login(
         &self,
         code: impl Into<String>
@@ -148,6 +212,16 @@ impl AppClient {
         self.exchange_long_lived_token(short_lived_token).await
     }
 
+    /// Inspects a Facebook access token via the `/debug_token` endpoint.
+    ///
+    /// Returns metadata including the token's owner, scopes, expiry, and validity.
+    /// Works with any token type (user, page, app).
+    ///
+    /// Uses the app access token (formatted as `{app_id}|{app_secret}`) for authorization.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AuthError::Request`] if the HTTP request fails.
     pub async fn debug_token<O, L>(
         &self,
         token: AccessToken<O, L>

@@ -4,11 +4,31 @@ use crate::auth::token_lifetime;
 use crate::graph::{GraphClient, GraphError, Method};
 use crate::api::post::Post;
 
+/// Trait for cross-cutting post operations (like, unlike, delete, get).
+///
+/// Implemented by [`PostApi`](crate::api::post::PostApi) and [`PageApi`](crate::api::page::PageApi),
+/// allowing you to perform post operations with either a page-scoped or user-scoped
+/// Graph client.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// use facebook_sdk_rs::api::post::{PostOperations, Post};
+///
+/// fn process_post(api: &impl PostOperations, post: &Post) {
+///     api.like_post(post);
+/// }
+/// ```
 pub trait PostOperations {
+    /// The owner type of the underlying Graph client (User or Page).
     type Owner: Clone + Send;
 
+    /// Returns a reference to the underlying Graph client.
     fn graph_client(&self) -> &GraphClient<Self::Owner, token_lifetime::Long>;
 
+    /// Likes the given post.
+    ///
+    /// Calls `POST /{post_id}/likes`.
     fn like_post(&self, post: &Post) -> impl Future<Output = Result<(), GraphError>> + Send
     where
         Self: Sync,
@@ -22,6 +42,9 @@ pub trait PostOperations {
         }
     }
 
+    /// Removes the like from the given post.
+    ///
+    /// Calls `DELETE /{post_id}/likes`.
     fn unlike_post(&self, post: &Post) -> impl Future<Output = Result<(), GraphError>> + Send
     where
         Self: Sync,
@@ -35,6 +58,9 @@ pub trait PostOperations {
         }
     }
 
+    /// Deletes the given post.
+    ///
+    /// Calls `DELETE /{post_id}`.
     fn delete_post(&self, post: &Post) -> impl Future<Output = Result<(), GraphError>> + Send
     where
         Self: Sync,
@@ -48,6 +74,9 @@ pub trait PostOperations {
         }
     }
 
+    /// Fetches a single post by ID.
+    ///
+    /// Calls `GET /{post_id}` with the fields from [`Post::fields()`].
     fn get_post(
         &self,
         id: impl Into<String>,
@@ -65,5 +94,3 @@ pub trait PostOperations {
         }
     }
 }
-
-

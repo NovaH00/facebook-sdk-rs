@@ -2,6 +2,12 @@
 name = "facebook-sdk-rs"
 version = "0.1.0"
 edition = "2024"
+description = "Rust SDK for the Facebook Graph API and Messenger Platform"
+homepage = "https://github.com/NovaH00/facebook-sdk-rs"
+repository = "https://github.com/NovaH00/facebook-sdk-rs"
+license = "MIT"
+keywords = ["facebook", "graph-api", "messenger", "meta", "social"]
+categories = ["api-bindings", "web-programming"]
 
 [dependencies]
 chrono = { version = "0.4.45", features = ["serde"] }
@@ -11,5 +17,4 @@ serde_json = "1.0.150"
 strum = "0.28.0"
 strum_macros = "0.28.0"
 thiserror = "2.0.18"
-tokio = { version = "1.52.3", features = ["full"] }
 url = "2.5.8"

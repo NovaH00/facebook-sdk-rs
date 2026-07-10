@@ -1,4 +1,3 @@
-
 use crate::graph::{
     PageGraphClient,
     GraphConnection,
@@ -9,6 +8,23 @@ use crate::api::message::MessageApi;
 use super::models::{Conversation};
 
 
+/// High-level API for reading a Page's Messenger conversations.
+///
+/// Provides paginated access to the Page's conversations and a factory
+/// for creating [`MessageApi`] instances.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// # use facebook_sdk_rs::api::conversation::ConversationApi;
+/// # use facebook_sdk_rs::graph::PageGraphClient;
+/// # let client: PageGraphClient = unimplemented!();
+/// let conv_api = ConversationApi::new(client, "123456789");
+/// let conversations = conv_api.collect_paginated_conversations(None).await.unwrap();
+/// for conv in &conversations {
+///     let msg_api = conv_api.get_message_api(conv).unwrap();
+/// }
+/// ```
 #[derive(Debug, Clone)]
 pub struct ConversationApi {
     page_graph_client: PageGraphClient,
@@ -16,6 +32,10 @@ pub struct ConversationApi {
 }
 
 impl ConversationApi {
+    /// Creates a new `ConversationApi`.
+    ///
+    /// * `page_graph_client` — A Graph client with a Page access token
+    /// * `page_id` — The Page's Facebook ID (used to resolve recipients)
     pub fn new(
         page_graph_client: PageGraphClient,
         page_id: impl Into<String>
@@ -26,6 +46,9 @@ impl ConversationApi {
         }
     }
 
+    /// Fetches the first page of the Page's conversations.
+    ///
+    /// Calls `GET /me/conversations`.
     pub async fn first_paginated_conversations(
         &self,
         limit: Option<u32>,
@@ -41,6 +64,7 @@ impl ConversationApi {
         request.send().await
     }
 
+    /// Fetches the next page of conversations using cursor pagination.
     pub async fn next_paginated_conversations(
         &self,
         limit: Option<u32>,
@@ -66,6 +90,9 @@ impl ConversationApi {
         request.send().await
     }
 
+    /// Fetches all conversations, handling pagination automatically.
+    ///
+    /// Deduplicates results by conversation ID.
     pub async fn collect_paginated_conversations(
         &self,
         limit: Option<u32>,
@@ -92,6 +119,9 @@ impl ConversationApi {
         Ok(all)
     }
 
+    /// Fetches a single conversation by ID.
+    ///
+    /// Calls `GET /{conversation_id}`.
     pub async fn get_conversation(
         &self,
         conversation_id: &str,
@@ -103,6 +133,11 @@ impl ConversationApi {
             .await
     }
 
+    /// Creates a [`MessageApi`] for the given conversation.
+    ///
+    /// Resolves the conversation's recipient (the non-Page participant)
+    /// automatically. Returns [`GraphError::MissingRecipient`] if the
+    /// conversation has no non-Page participant.
     pub fn get_message_api(
         &self,
         conversation: &Conversation

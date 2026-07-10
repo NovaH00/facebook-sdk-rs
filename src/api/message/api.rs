@@ -1,4 +1,3 @@
-
 use crate::graph::{
     PageGraphClient,
     GraphConnection,
@@ -11,6 +10,25 @@ use super::models::{Message, MessagingType};
 use super::schemas::SendMessageResponse;
 
 
+/// High-level API for reading and sending messages in a Messenger conversation.
+///
+/// Provides paginated access to message history and the ability to send
+/// replies via the Messenger Send API.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// # use facebook_sdk_rs::api::message::{MessageApi, MessagingType};
+/// # use facebook_sdk_rs::graph::PageGraphClient;
+/// # use facebook_sdk_rs::api::models::Participant;
+/// # let client: PageGraphClient = unimplemented!();
+/// # let recipient = Participant { id: "123".into(), name: "User".into(), email: None };
+/// let msg_api = MessageApi::new(client, "conversation_id", recipient);
+///
+/// let messages = msg_api.collect_paginated_messages(None).await.unwrap();
+/// let response = msg_api.send_message("Hello!", MessagingType::Response).await.unwrap();
+/// println!("Sent message ID: {}", response.message_id);
+/// ```
 #[derive(Debug, Clone)]
 pub struct MessageApi {
     page_graph_client: PageGraphClient,
@@ -19,6 +37,11 @@ pub struct MessageApi {
 }
 
 impl MessageApi {
+    /// Creates a new `MessageApi`.
+    ///
+    /// * `page_graph_client` — A Graph client with a Page access token
+    /// * `conversation_id` — The Messenger conversation ID
+    /// * `recipient` — The non-Page participant (the person you're messaging)
     pub fn new(
         page_graph_client: PageGraphClient,
         conversation_id: impl Into<String>,
@@ -31,6 +54,9 @@ impl MessageApi {
         }
     }
 
+    /// Fetches the first page of messages in the conversation.
+    ///
+    /// Calls `GET /{conversation_id}/messages`.
     pub async fn first_paginated_messages(
         &self,
         limit: Option<u32>,
@@ -46,7 +72,8 @@ impl MessageApi {
         request.send().await
     }
 
-    pub async fn next_paginated_messages(
+    /// Fetches the next page of messages using cursor pagination.
+    pub async fn next_paginated_messages (
         &self,
         limit: Option<u32>,
         current: &GraphConnection<Message>,
@@ -71,6 +98,9 @@ impl MessageApi {
         request.send().await
     }
 
+    /// Fetches all messages in the conversation, handling pagination automatically.
+    ///
+    /// Deduplicates results by message ID.
     pub async fn collect_paginated_messages(
         &self,
         limit: Option<u32>,
@@ -105,6 +135,15 @@ impl MessageApi {
         Ok(all)
     }
 
+    /// Sends a text message reply in the conversation.
+    ///
+    /// Calls `POST /me/messages` with the recipient, message text, and messaging type.
+    /// Uses `serde_json::json!()` for proper JSON escaping of the message text.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::Facebook`] if the message cannot be sent (e.g.,
+    /// outside the 24-hour window without a valid message tag).
     pub async fn send_message(
         &self,
         message: &str,
