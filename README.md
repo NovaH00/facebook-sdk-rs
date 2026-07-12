@@ -26,7 +26,7 @@ facebook-sdk-rs
 ├── graph         — Graph API client, request builder, pagination
 └── api           — High-level domain APIs
     ├── user      — User profile (/me)
-    ├── page      — Page management, Page-scoped API factories
+    ├── page      — Page management, token extraction
     ├── post      — Post listing and operations (like, unlike, delete)
     ├── conversation — Messenger conversation listing
     ├── message   — Message history and send API
@@ -40,20 +40,27 @@ The domain APIs follow a layered ownership pattern:
 ```
 UserApi (user token)
   └── get_page_api() → PageApi (user token)
-        ├── get_post_api(page)          → PostApi (page token)
-        ├── get_conversation_api(page)  → ConversationApi (page token)
-        │     └── get_message_api(conv) → MessageApi (page token)
-        └── get_webhook_api(page)       → WebhookApi (page token)
+        └── get_graph_client(page) → PageGraphClient (page token)
+
+PageGraphClient (page token) used directly with:
+  ├── PostApi::new(client)
+  ├── ConversationApi::new(client)
+  ├── MessageApi::new(client)
+  └── WebhookApi::new(client)
 ```
 
-Each level holds the token type appropriate for its scope. You start with a user
-access token and narrow down to page-scoped tokens as needed.
+Each API carries only its GraphClient — you pass IDs (page_id, conversation_id, etc.)
+as method arguments when making calls.
 
 ## Quick Start
 
 ```rust
 use facebook_sdk_rs::auth::{AppClient, AppPermission, LongLivedUserToken};
-use facebook_sdk_rs::api::UserApi;
+use facebook_sdk_rs::api::{
+    UserApi,
+    conversation::ConversationApi,
+    message::{MessageApi, MessagingType},
+};
 
 // 1. Create an AppClient with Facebook app credentials
 let app = AppClient::new(
@@ -81,12 +88,14 @@ let page_api = user_api.get_page_api();
 let pages = page_api.collect_paginated_pages(None).await?;
 
 for page in &pages {
-    let conv_api = page_api.get_conversation_api(page)?;
+    let client = page_api.get_graph_client(page)?;
+    let conv_api = ConversationApi::new(client.clone());
     let conversations = conv_api.collect_paginated_conversations(None).await?;
 
     for conv in &conversations {
-        let msg_api = conv_api.get_message_api(conv)?;
-        let response = msg_api.send_message("Hello!", MessagingType::Response).await?;
+        let recipient = conv.recipient(&page.id).unwrap();
+        let msg_api = MessageApi::new(client.clone());
+        let response = msg_api.send_message(&recipient, "Hello!", MessagingType::Response).await?;
         println!("Sent: {}", response.message_id);
     }
 }
@@ -197,7 +206,7 @@ Variants: `V25_0`, `V24_0`, `V23_0`, `V22_0`. Defaults to `V25_0`.
 | `Request` | HTTP transport error |
 | `Facebook { message, code, error_subcode, fbtrace_id, is_transient }` | Structured Facebook API error |
 | `MissingAccessToken { origin, message }` | Missing required access token |
-| `MissingRecipient { origin, conversation_id, existing_participants }` | Conversation has no non-Page participant |
+
 
 ---
 
@@ -234,9 +243,6 @@ Variants: `V25_0`, `V24_0`, `V23_0`, `V22_0`. Defaults to `V25_0`.
 | `next_paginated_pages(limit, current)` | Fetches next page using cursor |
 | `collect_paginated_pages(limit)` | Fetches all Pages with auto-pagination |
 | `get_graph_client(page)` | Extracts a PageGraphClient from a Page |
-| `get_post_api(page)` | Creates a PostApi for the given Page |
-| `get_conversation_api(page)` | Creates a ConversationApi for the given Page |
-| `get_webhook_api(page)` | Creates a WebhookApi for the given Page |
 | `get_user_info(uid)` | Looks up a user by PSID |
 
 #### `Page`
@@ -281,12 +287,11 @@ Implemented by: `PostApi`, `PageApi`
 
 | Method | Description |
 |--------|-------------|
-| `new(page_graph_client, page_id)` | Creates a new ConversationApi |
+| `new(page_graph_client)` | Creates a new ConversationApi |
 | `first_paginated_conversations(limit)` | Fetches first page of conversations |
 | `next_paginated_conversations(limit, current)` | Fetches next page using cursor |
 | `collect_paginated_conversations(limit)` | Fetches all conversations with auto-pagination |
 | `get_conversation(conversation_id)` | Fetches a single conversation by ID |
-| `get_message_api(conversation)` | Creates a MessageApi, auto-resolves the recipient |
 
 #### `Conversation`
 
@@ -299,11 +304,11 @@ Implemented by: `PostApi`, `PageApi`
 
 | Method | Description |
 |--------|-------------|
-| `new(page_graph_client, conversation_id, recipient)` | Creates a new MessageApi |
-| `first_paginated_messages(limit)` | Fetches first page of messages |
-| `next_paginated_messages(limit, current)` | Fetches next page using cursor |
-| `collect_paginated_messages(limit)` | Fetches all messages with auto-pagination |
-| `send_message(message, messaging_type)` | Sends a text message reply (`POST /me/messages`) |
+| `new(page_graph_client)` | Creates a new MessageApi |
+| `first_paginated_messages(conversation_id, limit)` | Fetches first page of messages |
+| `next_paginated_messages(conversation_id, limit, current)` | Fetches next page using cursor |
+| `collect_paginated_messages(conversation_id, limit)` | Fetches all messages with auto-pagination |
+| `send_message(recipient, message, messaging_type)` | Sends a text message reply (`POST /me/messages`) |
 
 #### `Message`
 
@@ -334,11 +339,11 @@ Variants: `Image`, `Video`, `File`, `Other(serde_json::Value)`
 
 | Method | Description |
 |--------|-------------|
-| `new(page_graph_client, page_id)` | Creates a new WebhookApi |
-| `subscribe(fields)` | Subscribes the Page to webhook fields |
-| `unsubscribe(fields)` | Unsubscribes the Page from specific fields |
-| `unsubscribe_all()` | Unsubscribes the Page from all fields |
-| `list()` | Lists apps installed on the Page |
+| `new(page_graph_client)` | Creates a new WebhookApi |
+| `subscribe(page_id, fields)` | Subscribes the Page to webhook fields |
+| `unsubscribe(page_id, fields)` | Unsubscribes the Page from specific fields |
+| `unsubscribe_all(page_id)` | Unsubscribes the Page from all fields |
+| `list(page_id)` | Lists apps installed on the Page |
 
 #### `WebhookField`
 
@@ -391,7 +396,14 @@ match result {
 
 ## Cargo Features
 
-This crate has no feature flags. All dependencies are minimal for the core API surface.
+The `utoipa` feature enables OpenAPI schema generation via the [utoipa](https://crates.io/crates/utoipa) crate:
+
+```toml
+[dependencies]
+facebook-sdk-rs = { git = "...", features = ["utoipa"] }
+```
+
+All public model types gain `#[derive(utoipa::ToSchema)]` when this feature is active.
 
 ## License
 

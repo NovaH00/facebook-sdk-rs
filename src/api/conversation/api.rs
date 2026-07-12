@@ -4,14 +4,12 @@ use crate::graph::{
     GraphError,
     Method
 };
-use crate::api::message::MessageApi;
 use super::models::{Conversation};
 
 
 /// High-level API for reading a Page's Messenger conversations.
 ///
-/// Provides paginated access to the Page's conversations and a factory
-/// for creating [`MessageApi`] instances.
+/// Provides paginated access to the Page's conversations.
 ///
 /// # Example
 ///
@@ -19,30 +17,23 @@ use super::models::{Conversation};
 /// # use facebook_sdk_rs::api::conversation::ConversationApi;
 /// # use facebook_sdk_rs::graph::PageGraphClient;
 /// # let client: PageGraphClient = unimplemented!();
-/// let conv_api = ConversationApi::new(client, "123456789");
+/// let conv_api = ConversationApi::new(client);
 /// let conversations = conv_api.collect_paginated_conversations(None).await.unwrap();
-/// for conv in &conversations {
-///     let msg_api = conv_api.get_message_api(conv).unwrap();
-/// }
 /// ```
 #[derive(Debug, Clone)]
 pub struct ConversationApi {
     page_graph_client: PageGraphClient,
-    page_id: String,
 }
 
 impl ConversationApi {
     /// Creates a new `ConversationApi`.
     ///
     /// * `page_graph_client` — A Graph client with a Page access token
-    /// * `page_id` — The Page's Facebook ID (used to resolve recipients)
     pub fn new(
         page_graph_client: PageGraphClient,
-        page_id: impl Into<String>
     ) -> Self {
         Self {
             page_graph_client,
-            page_id: page_id.into()
         }
     }
 
@@ -131,35 +122,5 @@ impl ConversationApi {
             .fields(Conversation::fields())
             .send()
             .await
-    }
-
-    /// Creates a [`MessageApi`] for the given conversation.
-    ///
-    /// Resolves the conversation's recipient (the non-Page participant)
-    /// automatically. Returns [`GraphError::MissingRecipient`] if the
-    /// conversation has no non-Page participant.
-    pub fn get_message_api(
-        &self,
-        conversation: &Conversation
-    ) -> Result<MessageApi, GraphError> {
-        let recipient = conversation
-            .recipient(&self.page_id)
-            .ok_or(GraphError::MissingRecipient {
-                origin: "get_message_api".into(),
-                conversation_id: conversation.id.clone(),
-                existing_participants: conversation
-                    .participants
-                    .clone()
-                    .into_iter()
-                    .map(|pa| pa.name)
-                    .collect::<Vec<String>>()
-                    .join(", ")
-            })?;
-
-        Ok(MessageApi::new(
-            self.page_graph_client.clone(),
-            &conversation.id,
-            recipient.clone()
-        ))
     }
 }

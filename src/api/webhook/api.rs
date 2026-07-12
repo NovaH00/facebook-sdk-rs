@@ -19,35 +19,30 @@ use super::models::{WebhookField, SubscribedApp};
 /// # use facebook_sdk_rs::api::webhook::{WebhookApi, WebhookField};
 /// # use facebook_sdk_rs::graph::PageGraphClient;
 /// # let client: PageGraphClient = unimplemented!();
-/// let webhook = WebhookApi::new(client, "page_id");
+/// let webhook = WebhookApi::new(client);
 ///
-/// webhook.subscribe(&[
+/// webhook.subscribe("page_id", &[
 ///     WebhookField::Messages,
 ///     WebhookField::MessageDeliveries,
 /// ]).await.unwrap();
 ///
-/// let apps = webhook.list().await.unwrap();
+/// let apps = webhook.list("page_id").await.unwrap();
 /// ```
 #[derive(Debug, Clone)]
 pub struct WebhookApi {
     page_graph_client: PageGraphClient,
-    page_id: String,
 }
 
 impl WebhookApi {
-    /// Creates a new `WebhookApi` for the given Page.
-    pub fn new(page_graph_client: PageGraphClient, page_id: impl Into<String>) -> Self {
-        Self { page_graph_client, page_id: page_id.into() }
+    /// Creates a new `WebhookApi`.
+    pub fn new(page_graph_client: PageGraphClient) -> Self {
+        Self { page_graph_client }
     }
 
     /// Subscribes the Page to the specified webhook fields.
     ///
     /// Calls `POST /{page_id}/subscribed_apps?subscribed_fields=...`.
-    /// Facebook returns `{ "success": true }` on success.
-    ///
-    /// The Page must have installed the app first (usually done via the App Dashboard
-    /// or by a Page admin granting the `pages_manage_metadata` permission).
-    pub async fn subscribe(&self, fields: &[WebhookField]) -> Result<(), GraphError> {
+    pub async fn subscribe(&self, page_id: &str, fields: &[WebhookField]) -> Result<(), GraphError> {
         let fields_str = fields
             .iter()
             .map(|f| f.to_string())
@@ -55,7 +50,7 @@ impl WebhookApi {
             .join(",");
 
         self.page_graph_client
-            .request(Method::POST, format!("/{}/subscribed_apps", self.page_id))
+            .request(Method::POST, format!("/{}/subscribed_apps", page_id))
             .query([("subscribed_fields", &fields_str)])
             .send::<serde_json::Value>()
             .await?;
@@ -66,7 +61,7 @@ impl WebhookApi {
     /// Unsubscribes the Page from the specified webhook fields.
     ///
     /// Calls `DELETE /{page_id}/subscribed_apps?subscribed_fields=...`.
-    pub async fn unsubscribe(&self, fields: &[WebhookField]) -> Result<(), GraphError> {
+    pub async fn unsubscribe(&self, page_id: &str, fields: &[WebhookField]) -> Result<(), GraphError> {
         let fields_str = fields
             .iter()
             .map(|f| f.to_string())
@@ -74,7 +69,7 @@ impl WebhookApi {
             .join(",");
 
         self.page_graph_client
-            .request(Method::DELETE, format!("/{}/subscribed_apps", self.page_id))
+            .request(Method::DELETE, format!("/{}/subscribed_apps", page_id))
             .query([("subscribed_fields", &fields_str)])
             .send::<serde_json::Value>()
             .await?;
@@ -84,10 +79,10 @@ impl WebhookApi {
 
     /// Unsubscribes the Page from all webhook fields.
     ///
-    /// Calls `DELETE /{page_id}/subscribed_apps` without a `subscribed_fields` parameter.
-    pub async fn unsubscribe_all(&self) -> Result<(), GraphError> {
+    /// Calls `DELETE /{page_id}/subscribed_apps`.
+    pub async fn unsubscribe_all(&self, page_id: &str) -> Result<(), GraphError> {
         self.page_graph_client
-            .request(Method::DELETE, format!("/{}/subscribed_apps", self.page_id))
+            .request(Method::DELETE, format!("/{}/subscribed_apps", page_id))
             .send::<serde_json::Value>()
             .await?;
 
@@ -96,13 +91,12 @@ impl WebhookApi {
 
     /// Lists the apps installed on this Page.
     ///
-    /// Calls `GET /{page_id}/subscribed_apps`. Returns an empty vec if no apps
-    /// are installed.
-    pub async fn list(&self) -> Result<Vec<SubscribedApp>, GraphError> {
+    /// Calls `GET /{page_id}/subscribed_apps`.
+    pub async fn list(&self, page_id: &str) -> Result<Vec<SubscribedApp>, GraphError> {
         #[derive(serde::Deserialize)]
         struct Response { data: Vec<SubscribedApp> }
         let resp = self.page_graph_client
-            .request(Method::GET, format!("/{}/subscribed_apps", self.page_id))
+            .request(Method::GET, format!("/{}/subscribed_apps", page_id))
             .send::<Response>()
             .await?;
 

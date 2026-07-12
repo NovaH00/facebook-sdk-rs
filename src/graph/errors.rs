@@ -43,17 +43,5 @@ pub enum GraphError {
         message: String,
     },
 
-    /// A conversation does not contain a recipient (only the page itself).
-    #[error(
-        "{origin}: missing recipient in conversation ({conversation_id}). \
-         Existing participants: {existing_participants}"
-    )]
-    MissingRecipient {
-        /// The method that reported the error.
-        origin: String,
-        /// The conversation ID.
-        conversation_id: String,
-        /// The participants found in the conversation (for debugging).
-        existing_participants: String,
-    }
+
 }

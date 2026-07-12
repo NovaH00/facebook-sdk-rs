@@ -7,16 +7,13 @@ use crate::graph::{
     GraphError,
     GraphConnection
 };
-use crate::api::post::PostApi;
-use crate::api::conversation::ConversationApi;
-use crate::api::webhook::WebhookApi;
 
 use super::models::{Page, PageScopedUser};
 
-/// High-level API for managing Facebook Pages.
+/// High-level API for listing Pages managed by the authenticated user.
 ///
-/// `PageApi` lists the user's managed Pages and provides factory methods for
-/// constructing Page-scoped APIs for posts, conversations, and webhooks.
+/// `PageApi` lists the user's managed Pages and provides a helper
+/// to extract a [`PageGraphClient`] from a Page's access token.
 ///
 /// # Example
 ///
@@ -28,8 +25,8 @@ use super::models::{Page, PageScopedUser};
 ///
 /// let pages = page_api.collect_paginated_pages(None).await.unwrap();
 /// for page in &pages {
-///     let post_api = page_api.get_post_api(page).unwrap();
-///     // ...
+///     let client = page_api.get_graph_client(page).unwrap();
+///     // use client for page-scoped API calls
 /// }
 /// ```
 #[derive(Debug, Clone)]
@@ -150,40 +147,10 @@ impl PageApi {
             .access_token
             .map(PageToken::new)
             .ok_or(GraphError::MissingAccessToken {
-                origin: "get_post_api".to_string(),
+                origin: "get_graph_client".to_string(),
                 message: format!("page `{}` is missing access token", page.name)
             })?;
         Ok(GraphClient::new(page_access_token))
-    }
-
-    /// Creates a [`PostApi`] for managing the given Page's posts.
-    pub fn get_post_api(
-        &self,
-        page: &Page
-    ) -> Result<PostApi, GraphError> {
-        let page_graph_client = self.get_graph_client(page)?;
-        Ok(PostApi::new(page_graph_client))
-    }
-
-    /// Creates a [`ConversationApi`] for reading the given Page's conversations.
-    ///
-    /// The returned API is scoped to the Page's ID, which is used to resolve
-    /// the conversation recipient (the other party, not the Page itself).
-    pub fn get_conversation_api(
-        &self,
-        page: &Page
-    ) -> Result<ConversationApi, GraphError> {
-        let page_graph_client = self.get_graph_client(page)?;
-        Ok(ConversationApi::new(page_graph_client, &page.id))
-    }
-
-    /// Creates a [`WebhookApi`] for managing the given Page's webhook subscriptions.
-    pub fn get_webhook_api(
-        &self,
-        page: &Page
-    ) -> Result<WebhookApi, GraphError> {
-        let page_graph_client = self.get_graph_client(page)?;
-        Ok(WebhookApi::new(page_graph_client, &page.id))
     }
 
     /// Looks up a user by their Page-scoped ID (PSID).
