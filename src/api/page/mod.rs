@@ -8,4 +8,4 @@ mod api;
 mod models;
 
 pub use api::PageApi;
-pub use models::{Page, PageScopedUser};
+pub use models::{Page, PageScopedUser, Picture};

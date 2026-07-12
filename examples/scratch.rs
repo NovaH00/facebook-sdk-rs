@@ -16,6 +16,7 @@ use facebook_sdk_rs::api::{
     user::{UserApi, User},
     page::{PageApi, Page},
     post::PostOperations,
+    message::MessagingType,
     webhook::{WebhookField}
 };
 
@@ -55,10 +56,12 @@ async fn get_user_access_token() {
 
 async fn testing() {
     let user_token = LongLivedUserToken::new("EAA9os6nrAe4BR7mH0ZCJdXyoJ3lS8iCWuVEHzW3KVhQKRsR59rrTsKjXpodRVa8kw5uDM41BkmbGXpyrpQoiVyFuI9QwTl0jwUZBX4L9nGQJZBB78i9KJ7zdN5PeMTs29I2RDIYhZALDTFhh0q4mhqIo3opOfgnMzzZB0700EAuhnGOZAEv6BaxOk3AzfL");
-    let user_api = UserApi::new(user_token.clone());
+    let user_client = GraphClient::new(user_token);
+    let user_api = UserApi::new(user_client);
 
     let page_api = user_api.get_page_api();
     let pages = page_api.collect_paginated_pages(Some(20)).await.unwrap();
+    println!("{:#?}", pages);
     let first_page = pages.first().unwrap();
 
     let convo_api = page_api.get_conversation_api(first_page).unwrap();
@@ -67,7 +70,7 @@ async fn testing() {
 
     let message_api = convo_api.get_message_api(first_convo).unwrap();
 
-    let response = message_api.send_message("what's good yo!").await.unwrap();
+    let response = message_api.send_message("what's good yo!", MessagingType::Response).await.unwrap();
     println!("{:#?}", response);
 
 
