@@ -6,6 +6,7 @@ use strum_macros::{Display, EnumString};
 /// Pass a slice of these to [`WebhookApi::subscribe`](super::WebhookApi::subscribe)
 /// to receive real-time notifications.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumString)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum WebhookField {
     /// Receive messages sent to the Page via Messenger.
     #[strum(serialize = "messages")]
@@ -28,6 +29,7 @@ pub enum WebhookField {
 ///
 /// Returned by [`WebhookApi::list`](super::WebhookApi::list).
 #[derive(Debug, Clone, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct SubscribedApp {
     /// The app's category (e.g. "Business").
     pub category: String,

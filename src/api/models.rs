@@ -4,6 +4,7 @@ use serde::{Serialize, Deserialize};
 ///
 /// Represents a person or entity involved in a conversation, message, or page interaction.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct Participant {
     /// The Facebook-scoped ID of the participant.
     pub id: String,

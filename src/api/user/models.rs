@@ -2,6 +2,7 @@ use serde::{Serialize, Deserialize};
 
 /// A Facebook user profile returned by the `/me` endpoint.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct User {
     /// The user's Facebook ID.
     pub id: String,

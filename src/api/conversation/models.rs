@@ -4,6 +4,7 @@ use crate::api::models::{Participant, deserialize_participants};
 
 /// A Messenger conversation between a Page and a user.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct Conversation {
     /// The conversation ID.
     pub id: String,

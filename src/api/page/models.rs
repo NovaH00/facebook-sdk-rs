@@ -6,6 +6,7 @@ use serde::{Serialize, Deserialize, Serializer, Deserializer};
 /// This struct flattens that nesting so fields are accessed directly
 /// (e.g. `picture.url` instead of `picture.data.url`).
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct Picture {
     /// The profile picture URL.
     pub url: String,
@@ -76,6 +77,7 @@ impl Serialize for Picture {
 /// Returned by the `/me/accounts` endpoint. Contains the Page's
 /// access token which can be used to create Page-scoped API clients.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct Page {
     /// The Page's Facebook ID.
     pub id: String,
@@ -101,6 +103,7 @@ impl Page {
 /// Returned when looking up a user by ID with a Page access token.
 /// The ID is Page-scoped (PSID) — it is unique to that Page, not global.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct PageScopedUser {
     /// The Page-scoped user ID (PSID).
     pub id: String,

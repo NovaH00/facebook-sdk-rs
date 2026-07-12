@@ -7,6 +7,7 @@ use crate::api::models::{Participant};
 
 /// Metadata about an image attachment.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct ImageData {
     /// The image width in pixels.
     pub width: u32,
@@ -28,6 +29,7 @@ pub struct ImageData {
 
 /// Metadata about a video attachment.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct VideoData {
     /// The video width in pixels.
     pub width: u32,
@@ -52,6 +54,7 @@ pub struct VideoData {
 /// for unknown types.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum AttachmentData {
     /// An image attachment with metadata.
     Image {
@@ -91,6 +94,7 @@ where
 
 /// A message in a Messenger conversation.
 #[derive(Debug, Clone, Serialize,  Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct Message {
     /// The message ID.
     pub id: String,
@@ -133,6 +137,7 @@ where D: serde::Deserializer<'de> {
 /// - [`Update`](MessagingType::Update) — Proactive update (e.g. order confirmation, appointment reminder)
 /// - [`MessageTag`](MessagingType::MessageTag) — Tagged message that bypasses the 24-hour window (e.g. shipping notification)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumString)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum MessagingType {
     /// Reply to a received message (default, works within 24h window).
     #[strum(serialize = "RESPONSE")]

@@ -3,6 +3,7 @@ use serde::{Serialize, Deserialize};
 
 /// A Facebook Page post.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct Post {
     /// The post ID.
     pub id: String,
