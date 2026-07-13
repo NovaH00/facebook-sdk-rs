@@ -50,23 +50,17 @@ impl Serialize for Picture {
         S: Serializer,
     {
         #[derive(Serialize)]
-        struct RawData<'a> {
-            url: &'a str,
+        struct Flat {
+            url: String,
             height: Option<i32>,
             width: Option<i32>,
             is_silhouette: Option<bool>,
         }
-        #[derive(Serialize)]
-        struct Raw<'a> {
-            data: RawData<'a>,
-        }
-        Raw {
-            data: RawData {
-                url: &self.url,
-                height: self.height,
-                width: self.width,
-                is_silhouette: self.is_silhouette,
-            },
+        Flat {
+            url: self.url.clone(),
+            height: self.height,
+            width: self.width,
+            is_silhouette: self.is_silhouette,
         }
         .serialize(serializer)
     }
