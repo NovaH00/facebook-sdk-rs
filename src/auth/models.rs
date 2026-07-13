@@ -4,7 +4,7 @@ use std::str::FromStr;
 use strum_macros::{Display, EnumString};
 use chrono::{DateTime, Utc};
 use chrono::serde::ts_seconds_option;
-use serde::{Deserialize};
+use serde::{Deserialize, Serialize, Deserializer, Serializer};
 
 /// The base URL for Facebook's OAuth dialog.
 pub const OAUTH_BASE_URL: &str = "https://www.facebook.com";
@@ -126,6 +126,25 @@ pub enum AppAuthType {
     /// Require the user to re-enter their Facebook credentials before continuing.
     #[strum(serialize = "reauthenticate")]
     Reauthenticate,
+}
+
+impl Serialize for AppAuthType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.to_string().serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for AppAuthType {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        <Self as std::str::FromStr>::from_str(&s).map_err(serde::de::Error::custom)
+    }
 }
 
 /// A Facebook access token with phantom-type markers for owner and lifetime.

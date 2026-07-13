@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
 use strum_macros::{Display, EnumString};
@@ -222,4 +223,23 @@ pub enum MessagingType {
     /// Tagged message that can bypass the 24-hour window.
     #[strum(serialize = "MESSAGE_TAG")]
     MessageTag,
+}
+
+impl Serialize for MessagingType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.to_string().serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for MessagingType {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        MessagingType::from_str(&s).map_err(serde::de::Error::custom)
+    }
 }
