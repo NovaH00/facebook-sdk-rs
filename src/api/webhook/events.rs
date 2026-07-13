@@ -19,6 +19,7 @@ use serde::{Serialize, Deserialize};
 /// }
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct WebhookPayload {
     /// The object type (always `"page"` for Page webhooks).
     pub object: String,
@@ -28,6 +29,7 @@ pub struct WebhookPayload {
 
 /// A single entry in the webhook payload, corresponding to one page.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct WebhookEntry {
     /// The Page ID that triggered the event.
     pub id: String,
@@ -43,6 +45,7 @@ pub struct WebhookEntry {
 /// or a reaction. Use `match` to handle each case.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum WebhookMessagingEvent {
     /// A message was sent or received.
     Message {
@@ -72,6 +75,7 @@ pub enum WebhookMessagingEvent {
 /// [`crate::api::models::Participant`] for the richer participant type
 /// that includes name and email.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct WebhookParticipant {
     /// The Page-scoped user ID (PSID).
     pub id: String,
@@ -79,6 +83,7 @@ pub struct WebhookParticipant {
 
 /// Content of a received or sent message.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct MessageContent {
     /// The message ID.
     pub mid: String,
@@ -96,6 +101,7 @@ pub struct MessageContent {
 
 /// A quick reply payload from a message button interaction.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct QuickReply {
     /// The developer-defined payload string from the quick reply button.
     pub payload: Option<String>,
@@ -103,6 +109,7 @@ pub struct QuickReply {
 
 /// Reference to a message being replied to.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct ReplyTo {
     /// The message ID being replied to.
     pub mid: Option<String>,
@@ -110,6 +117,7 @@ pub struct ReplyTo {
 
 /// Delivery receipt information.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct DeliveryInfo {
     /// Message IDs that were delivered (may be absent for older clients).
     pub mids: Option<Vec<String>>,
@@ -119,6 +127,7 @@ pub struct DeliveryInfo {
 
 /// Reaction information (when a user reacts to a message).
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct ReactionInfo {
     /// The reaction type (e.g. `"smile"`, `"like"`, `"love"`, `"angry"`, etc.).
     pub reaction: String,
@@ -132,6 +141,7 @@ pub struct ReactionInfo {
 
 /// An attachment in a message.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct Attachment {
     /// The attachment type (e.g. `"image"`, `"video"`, `"audio"`, `"file"`, `"sticker"`).
     #[serde(rename = "type")]
@@ -142,6 +152,7 @@ pub struct Attachment {
 
 /// Payload data for a message attachment.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct AttachmentPayload {
     /// The URL of the attachment.
     pub url: Option<String>,

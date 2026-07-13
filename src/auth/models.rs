@@ -15,6 +15,7 @@ pub const OAUTH_BASE_URL: &str = "https://www.facebook.com";
 /// Facebook Login flow. Pass a slice of these to
 /// [`AppClient::get_oauth_url`](crate::auth::AppClient::get_oauth_url).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumString)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum AppPermission {
     /// Basic profile information. Granted by default.
     #[strum(serialize = "public_profile")]
@@ -114,6 +115,7 @@ impl<'de> Deserialize<'de> for AppPermission {
 
 /// Modifiers for the Facebook Login re-authorization flow.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumString)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum AppAuthType {
     /// Ask again for permissions that the user previously declined.
     #[strum(serialize = "rerequest")]
@@ -222,6 +224,7 @@ impl<O, L> AccessToken<O, L> {
 ///
 /// Returned by [`AppClient::debug_token`](crate::auth::AppClient::debug_token).
 #[derive(Debug, Clone, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct AccessTokenInfo {
     /// The app ID that owns this token.
     pub app_id: String,
