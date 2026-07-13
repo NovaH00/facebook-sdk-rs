@@ -9,12 +9,14 @@ mod schemas;
 
 pub use api::MessageApi;
 pub use models::{
-    Message,
-    MessagingType,
-    SendMessagePayload,
-    MediaType,
+    Attachment,
     AttachmentData,
     ImageData,
+    MediaType,
+    Message,
+    MessagingType,
+    Payload,
+    SendMessagePayload,
     VideoData,
 };
 pub use schemas::SendMessageResponse;

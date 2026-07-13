@@ -95,7 +95,7 @@ for page in &pages {
     for conv in &conversations {
         let msg_api = MessageApi::new(client.clone());
         let recipient_id = &conv.recipient(&page.id).unwrap().id;
-        let response = msg_api.send_message(recipient_id, SendMessagePayload::Text("Hello!"), MessagingType::Response).await?;
+        let response = msg_api.send_message(recipient_id, SendMessagePayload::Text { text: "Hello!".to_string() }, MessagingType::Response).await?;
         println!("Sent: {}", response.message_id);
     }
 }

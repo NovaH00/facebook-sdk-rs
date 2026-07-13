@@ -1,4 +1,3 @@
-use std::str::FromStr;
 use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
 use strum_macros::{Display, EnumString};
@@ -131,6 +130,7 @@ where D: serde::Deserializer<'de> {
 
 /// Supported media types for attachment messages.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum MediaType {
     Image,
@@ -151,57 +151,44 @@ impl AsRef<str> for MediaType {
 }
 
 /// Message content to send via the Messenger Send API.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum SendMessagePayload {
     /// A plain text message → `{ "text": "..." }`
-    Text(String),
+    Text {
+        /// The text content.
+        text: String,
+    },
     /// A media attachment → `{ "attachment": { "type": "...", "payload": { "url": "...", "is_reusable": bool? } } }`
     Media {
-        media_type: MediaType,
-        url: String,
-        is_reusable: Option<bool>,
+        /// The attachment wrapper.
+        attachment: Attachment,
     },
 }
 
-impl Serialize for SendMessagePayload {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        match self {
-            SendMessagePayload::Text(text) => {
-                #[derive(Serialize)]
-                struct Helper<'a> { text: &'a str }
-                Helper { text }.serialize(serializer)
-            }
-            SendMessagePayload::Media { media_type, url, is_reusable } => {
-                #[derive(Serialize)]
-                struct Payload<'a> {
-                    url: &'a str,
-                    #[serde(skip_serializing_if = "Option::is_none")]
-                    is_reusable: Option<bool>,
-                }
-                #[derive(Serialize)]
-                struct Attachment<'a> {
-                    #[serde(rename = "type")]
-                    attachment_type: &'a str,
-                    payload: Payload<'a>,
-                }
-                #[derive(Serialize)]
-                struct Helper<'a> {
-                    attachment: Attachment<'a>,
-                }
-                Helper {
-                    attachment: Attachment {
-                        attachment_type: media_type.as_ref(),
-                        payload: Payload { url, is_reusable: *is_reusable },
-                    },
-                }
-                .serialize(serializer)
-            }
-        }
-    }
+/// An attachment in a message sent via the Messenger Send API.
+///
+/// Maps to `{ "type": "...", "payload": { "url": "...", "is_reusable": bool? } }`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+pub struct Attachment {
+    /// The media type (`image`, `audio`, `video`, `file`).
+    #[serde(rename = "type")]
+    pub attachment_type: MediaType,
+    /// The media attachment payload.
+    pub payload: Payload,
+}
+
+/// The payload of a media attachment.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+pub struct Payload {
+    /// The URL of the media.
+    pub url: String,
+    /// Whether the attachment can be reused.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_reusable: Option<bool>,
 }
 
 /// The messaging type for a message sent via the Send API.
@@ -211,7 +198,8 @@ impl Serialize for SendMessagePayload {
 /// - [`Response`](MessagingType::Response) — Reply to a user's message within the 24-hour window
 /// - [`Update`](MessagingType::Update) — Proactive update (e.g. order confirmation, appointment reminder)
 /// - [`MessageTag`](MessagingType::MessageTag) — Tagged message that bypasses the 24-hour window (e.g. shipping notification)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumString)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumString, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum MessagingType {
     /// Reply to a received message (default, works within 24h window).
@@ -223,23 +211,4 @@ pub enum MessagingType {
     /// Tagged message that can bypass the 24-hour window.
     #[strum(serialize = "MESSAGE_TAG")]
     MessageTag,
-}
-
-impl Serialize for MessagingType {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        self.to_string().serialize(serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for MessagingType {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        MessagingType::from_str(&s).map_err(serde::de::Error::custom)
-    }
 }

@@ -1,11 +1,12 @@
-use serde::{Deserialize, Serialize, Deserializer, Serializer};
+use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumString};
 
 /// A webhook field that a Page can subscribe to.
 ///
 /// Pass a slice of these to [`WebhookApi::subscribe`](super::WebhookApi::subscribe)
 /// to receive real-time notifications.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumString)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumString, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum WebhookField {
     /// Receive messages sent to the Page via Messenger.
@@ -23,25 +24,6 @@ pub enum WebhookField {
     /// Receive feed updates (posts, reactions, shares).
     #[strum(serialize = "feed")]
     Feed,
-}
-
-impl Serialize for WebhookField {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.to_string().serialize(serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for WebhookField {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        <Self as std::str::FromStr>::from_str(&s).map_err(serde::de::Error::custom)
-    }
 }
 
 /// An app installed on a Facebook Page.

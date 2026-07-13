@@ -1,10 +1,9 @@
 use std::marker::PhantomData;
-use std::str::FromStr;
 
 use strum_macros::{Display, EnumString};
 use chrono::{DateTime, Utc};
 use chrono::serde::ts_seconds_option;
-use serde::{Deserialize, Serialize, Deserializer, Serializer};
+use serde::{Deserialize, Serialize};
 
 /// The base URL for Facebook's OAuth dialog.
 pub const OAUTH_BASE_URL: &str = "https://www.facebook.com";
@@ -14,7 +13,8 @@ pub const OAUTH_BASE_URL: &str = "https://www.facebook.com";
 /// These are the standard permissions your app can request during the
 /// Facebook Login flow. Pass a slice of these to
 /// [`AppClient::get_oauth_url`](crate::auth::AppClient::get_oauth_url).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumString)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumString, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum AppPermission {
     /// Basic profile information. Granted by default.
@@ -102,19 +102,9 @@ pub enum AppPermission {
     PublishVideo,
 }
 
-impl<'de> Deserialize<'de> for AppPermission {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let value = String::deserialize(deserializer)?;
-        AppPermission::from_str(&value)
-            .map_err(serde::de::Error::custom)
-    }
-}
-
 /// Modifiers for the Facebook Login re-authorization flow.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumString)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumString, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum AppAuthType {
     /// Ask again for permissions that the user previously declined.
@@ -128,25 +118,6 @@ pub enum AppAuthType {
     /// Require the user to re-enter their Facebook credentials before continuing.
     #[strum(serialize = "reauthenticate")]
     Reauthenticate,
-}
-
-impl Serialize for AppAuthType {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.to_string().serialize(serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for AppAuthType {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        <Self as std::str::FromStr>::from_str(&s).map_err(serde::de::Error::custom)
-    }
 }
 
 /// A Facebook access token with phantom-type markers for owner and lifetime.

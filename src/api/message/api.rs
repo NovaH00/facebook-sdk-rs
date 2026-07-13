@@ -23,7 +23,7 @@ use super::schemas::SendMessageResponse;
 /// let msg_api = MessageApi::new(client);
 ///
 /// let messages = msg_api.collect_paginated_messages("conversation_id", None).await.unwrap();
-/// let response = msg_api.send_message("recipient_id", SendMessagePayload::Text("Hello!"), MessagingType::Response).await.unwrap();
+/// let response = msg_api.send_message("recipient_id", SendMessagePayload::Text { text: "Hello!".to_string() }, MessagingType::Response).await.unwrap();
 /// println!("Sent message ID: {}", response.message_id);
 /// ```
 #[derive(Debug, Clone)]
