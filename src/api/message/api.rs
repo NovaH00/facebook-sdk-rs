@@ -6,7 +6,7 @@ use crate::graph::{
 };
 use crate::api::models::Participant;
 
-use super::models::{Message, MessagingType};
+use super::models::{Message, MessagingType, SendMessagePayload};
 use super::schemas::SendMessageResponse;
 
 
@@ -18,7 +18,7 @@ use super::schemas::SendMessageResponse;
 /// # Example
 ///
 /// ```rust,no_run
-/// # use facebook_sdk_rs::api::message::{MessageApi, MessagingType};
+/// # use facebook_sdk_rs::api::message::{MessageApi, MessagingType, SendMessagePayload};
 /// # use facebook_sdk_rs::graph::PageGraphClient;
 /// # use facebook_sdk_rs::api::models::Participant;
 /// # let client: PageGraphClient = unimplemented!();
@@ -26,7 +26,7 @@ use super::schemas::SendMessageResponse;
 /// let msg_api = MessageApi::new(client);
 ///
 /// let messages = msg_api.collect_paginated_messages("conversation_id", None).await.unwrap();
-/// let response = msg_api.send_message(&recipient, "Hello!", MessagingType::Response).await.unwrap();
+/// let response = msg_api.send_message(&recipient, SendMessagePayload::Text("Hello!"), MessagingType::Response).await.unwrap();
 /// println!("Sent message ID: {}", response.message_id);
 /// ```
 #[derive(Debug, Clone)]
@@ -130,9 +130,9 @@ impl MessageApi {
         Ok(all)
     }
 
-    /// Sends a text message reply in the conversation.
+    /// Sends a message reply (text or media) in the conversation.
     ///
-    /// Calls `POST /me/messages` with the recipient, message text, and messaging type.
+    /// Calls `POST /me/messages` with the recipient, message payload, and messaging type.
     ///
     /// # Errors
     ///
@@ -141,11 +141,11 @@ impl MessageApi {
     pub async fn send_message(
         &self,
         recipient: &Participant,
-        message: &str,
+        payload: SendMessagePayload,
         messaging_type: MessagingType,
     ) -> Result<SendMessageResponse, GraphError> {
         let recipient_json = serde_json::json!({"id": &recipient.id}).to_string();
-        let message_json = serde_json::json!({"text": message}).to_string();
+        let message_json = serde_json::to_string(&payload)?;
         let messaging_type_str = messaging_type.to_string();
 
         self.page_graph_client

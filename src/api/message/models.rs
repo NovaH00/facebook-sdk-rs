@@ -128,6 +128,80 @@ where D: serde::Deserializer<'de> {
     }))
 }
 
+/// Supported media types for attachment messages.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+pub enum MediaType {
+    Image,
+    Audio,
+    Video,
+    File,
+}
+
+impl AsRef<str> for MediaType {
+    fn as_ref(&self) -> &'static str {
+        match self {
+            MediaType::Image => "image",
+            MediaType::Audio => "audio",
+            MediaType::Video => "video",
+            MediaType::File => "file",
+        }
+    }
+}
+
+/// Message content to send via the Messenger Send API.
+#[derive(Debug, Clone, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+pub enum SendMessagePayload {
+    /// A plain text message → `{ "text": "..." }`
+    Text(String),
+    /// A media attachment → `{ "attachment": { "type": "...", "payload": { "url": "...", "is_reusable": bool? } } }`
+    Media {
+        media_type: MediaType,
+        url: String,
+        is_reusable: Option<bool>,
+    },
+}
+
+impl Serialize for SendMessagePayload {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            SendMessagePayload::Text(text) => {
+                #[derive(Serialize)]
+                struct Helper<'a> { text: &'a str }
+                Helper { text }.serialize(serializer)
+            }
+            SendMessagePayload::Media { media_type, url, is_reusable } => {
+                #[derive(Serialize)]
+                struct Payload<'a> {
+                    url: &'a str,
+                    #[serde(skip_serializing_if = "Option::is_none")]
+                    is_reusable: Option<bool>,
+                }
+                #[derive(Serialize)]
+                struct Attachment<'a> {
+                    #[serde(rename = "type")]
+                    attachment_type: &'a str,
+                    payload: Payload<'a>,
+                }
+                #[derive(Serialize)]
+                struct Helper<'a> {
+                    attachment: Attachment<'a>,
+                }
+                Helper {
+                    attachment: Attachment {
+                        attachment_type: media_type.as_ref(),
+                        payload: Payload { url, is_reusable: *is_reusable },
+                    },
+                }
+                .serialize(serializer)
+            }
+        }
+    }
+}
 
 /// The messaging type for a message sent via the Send API.
 ///

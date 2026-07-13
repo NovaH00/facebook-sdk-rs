@@ -11,6 +11,8 @@ pub use api::MessageApi;
 pub use models::{
     Message,
     MessagingType,
+    SendMessagePayload,
+    MediaType,
     AttachmentData,
     ImageData,
     VideoData,
