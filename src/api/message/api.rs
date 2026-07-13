@@ -4,7 +4,6 @@ use crate::graph::{
     GraphError,
     Method
 };
-use crate::api::models::Participant;
 
 use super::models::{Message, MessagingType, SendMessagePayload};
 use super::schemas::SendMessageResponse;
@@ -20,13 +19,11 @@ use super::schemas::SendMessageResponse;
 /// ```rust,no_run
 /// # use facebook_sdk_rs::api::message::{MessageApi, MessagingType, SendMessagePayload};
 /// # use facebook_sdk_rs::graph::PageGraphClient;
-/// # use facebook_sdk_rs::api::models::Participant;
 /// # let client: PageGraphClient = unimplemented!();
-/// # let recipient = Participant { id: "123".into(), name: "User".into(), email: None };
 /// let msg_api = MessageApi::new(client);
 ///
 /// let messages = msg_api.collect_paginated_messages("conversation_id", None).await.unwrap();
-/// let response = msg_api.send_message(&recipient, SendMessagePayload::Text("Hello!"), MessagingType::Response).await.unwrap();
+/// let response = msg_api.send_message("recipient_id", SendMessagePayload::Text("Hello!"), MessagingType::Response).await.unwrap();
 /// println!("Sent message ID: {}", response.message_id);
 /// ```
 #[derive(Debug, Clone)]
@@ -140,11 +137,11 @@ impl MessageApi {
     /// outside the 24-hour window without a valid message tag).
     pub async fn send_message(
         &self,
-        recipient: &Participant,
+        recipient_id: &str,
         payload: SendMessagePayload,
         messaging_type: MessagingType,
     ) -> Result<SendMessageResponse, GraphError> {
-        let recipient_json = serde_json::json!({"id": &recipient.id}).to_string();
+        let recipient_json = serde_json::json!({"id": recipient_id}).to_string();
         let message_json = serde_json::to_string(&payload)?;
         let messaging_type_str = messaging_type.to_string();
 

@@ -59,7 +59,7 @@ use facebook_sdk_rs::auth::{AppClient, AppPermission, LongLivedUserToken};
 use facebook_sdk_rs::api::{
     UserApi,
     conversation::ConversationApi,
-    message::{MessageApi, MessagingType},
+    message::{MessageApi, MessagingType, SendMessagePayload},
 };
 
 // 1. Create an AppClient with Facebook app credentials
@@ -93,9 +93,9 @@ for page in &pages {
     let conversations = conv_api.collect_paginated_conversations(None).await?;
 
     for conv in &conversations {
-        let recipient = conv.recipient(&page.id).unwrap();
         let msg_api = MessageApi::new(client.clone());
-        let response = msg_api.send_message(&recipient, "Hello!", MessagingType::Response).await?;
+        let recipient_id = &conv.recipient(&page.id).unwrap().id;
+        let response = msg_api.send_message(recipient_id, SendMessagePayload::Text("Hello!"), MessagingType::Response).await?;
         println!("Sent: {}", response.message_id);
     }
 }
@@ -276,9 +276,9 @@ Variants: `V25_0`, `V24_0`, `V23_0`, `V22_0`. Defaults to `V25_0`.
 
 | Method | Description |
 |--------|-------------|
-| `like_post(post)` | Likes the given post (`POST /{post_id}/likes`) |
-| `unlike_post(post)` | Removes like from the given post (`DELETE /{post_id}/likes`) |
-| `delete_post(post)` | Deletes the given post (`DELETE /{post_id}`) |
+| `like_post(post_id)` | Likes the given post (`POST /{post_id}/likes`) |
+| `unlike_post(post_id)` | Removes like from the given post (`DELETE /{post_id}/likes`) |
+| `delete_post(post_id)` | Deletes the given post (`DELETE /{post_id}`) |
 | `get_post(id)` | Fetches a single post by ID |
 
 Implemented by: `PostApi`, `PageApi`
@@ -308,7 +308,7 @@ Implemented by: `PostApi`, `PageApi`
 | `first_paginated_messages(conversation_id, limit)` | Fetches first page of messages |
 | `next_paginated_messages(conversation_id, limit, current)` | Fetches next page using cursor |
 | `collect_paginated_messages(conversation_id, limit)` | Fetches all messages with auto-pagination |
-| `send_message(recipient, message, messaging_type)` | Sends a text message reply (`POST /me/messages`) |
+| `send_message(recipient_id, payload, messaging_type)` | Sends a text or media message (`POST /me/messages`) |
 
 #### `Message`
 

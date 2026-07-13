@@ -13,10 +13,10 @@ use crate::api::post::Post;
 /// # Example
 ///
 /// ```rust,no_run
-/// use facebook_sdk_rs::api::post::{PostOperations, Post};
+/// use facebook_sdk_rs::api::post::PostOperations;
 ///
-/// fn process_post(api: &impl PostOperations, post: &Post) {
-///     api.like_post(post);
+/// fn process_post(api: &impl PostOperations) {
+///     api.like_post("123456789");
 /// }
 /// ```
 pub trait PostOperations {
@@ -29,13 +29,13 @@ pub trait PostOperations {
     /// Likes the given post.
     ///
     /// Calls `POST /{post_id}/likes`.
-    fn like_post(&self, post: &Post) -> impl Future<Output = Result<(), GraphError>> + Send
+    fn like_post(&self, post_id: &str) -> impl Future<Output = Result<(), GraphError>> + Send
     where
         Self: Sync,
     {
         async move {
             self.graph_client()
-                .request(Method::POST, format!("/{}/likes", post.id))
+                .request(Method::POST, format!("/{}/likes", post_id))
                 .send::<serde_json::Value>()
                 .await?;
             Ok(())
@@ -45,13 +45,13 @@ pub trait PostOperations {
     /// Removes the like from the given post.
     ///
     /// Calls `DELETE /{post_id}/likes`.
-    fn unlike_post(&self, post: &Post) -> impl Future<Output = Result<(), GraphError>> + Send
+    fn unlike_post(&self, post_id: &str) -> impl Future<Output = Result<(), GraphError>> + Send
     where
         Self: Sync,
     {
         async move {
             self.graph_client()
-                .request(Method::DELETE, format!("/{}/likes", post.id))
+                .request(Method::DELETE, format!("/{}/likes", post_id))
                 .send::<serde_json::Value>()
                 .await?;
             Ok(())
@@ -61,13 +61,13 @@ pub trait PostOperations {
     /// Deletes the given post.
     ///
     /// Calls `DELETE /{post_id}`.
-    fn delete_post(&self, post: &Post) -> impl Future<Output = Result<(), GraphError>> + Send
+    fn delete_post(&self, post_id: &str) -> impl Future<Output = Result<(), GraphError>> + Send
     where
         Self: Sync,
     {
         async move {
             self.graph_client()
-                .request(Method::DELETE, format!("/{}", post.id))
+                .request(Method::DELETE, format!("/{}", post_id))
                 .send::<serde_json::Value>()
                 .await?;
             Ok(())
