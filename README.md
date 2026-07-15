@@ -55,15 +55,15 @@ as method arguments when making calls.
 ## Quick Start
 
 ```rust
-use facebook_sdk_rs::auth::{AppClient, AppPermission, LongLivedUserToken};
+use facebook_sdk_rs::auth::{AuthClient, AppPermission, LongLivedUserToken};
 use facebook_sdk_rs::api::{
     UserApi,
     conversation::ConversationApi,
     message::{MessageApi, MessagingType, SendMessagePayload},
 };
 
-// 1. Create an AppClient with Facebook app credentials
-let app = AppClient::new(
+// 1. Create an AuthClient with Facebook app credentials
+let app = AuthClient::new(
     "your-app-id",
     "your-app-secret",
     "https://your-redirect-url.com/callback",
@@ -105,11 +105,11 @@ for page in &pages {
 
 ### `auth` module — Authentication & Token Management
 
-#### `AppClient`
+#### `AuthClient`
 
 | Method | Description |
 |--------|-------------|
-| `new(app_id, app_secret, redirect_url)` | Creates a new AppClient |
+| `new(app_id, app_secret, redirect_url)` | Creates a new AuthClient |
 | `set_version(version)` | Overrides the Graph API version |
 | `get_oauth_url(state, scope, auth_type)` | Builds the Facebook OAuth consent URL |
 | `login(code)` | Exchanges an authorization code for a long-lived user token |

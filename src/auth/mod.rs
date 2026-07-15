@@ -2,7 +2,7 @@
 //!
 //! This module provides the full Facebook Login flow:
 //!
-//! - [`AppClient`] — Manages app credentials, generates OAuth URLs, exchanges codes for tokens
+//! - [`AuthClient`] — Manages app credentials, generates OAuth URLs, exchanges codes for tokens
 //! - [`AccessToken<O, L>`] — Phantom-typed token that tracks owner (User/Page) and lifetime (Short/Long)
 //! - [`LongLivedUserToken`] / [`ShortLivedUserToken`] — Convenience type aliases
 //! - [`AppPermission`] — Facebook OAuth permission scopes
@@ -13,7 +13,7 @@ mod models;
 mod schemas;
 mod errors;
 
-pub use client::AppClient;
+pub use client::AuthClient;
 pub use models::{
     AppPermission,
     AppAuthType,

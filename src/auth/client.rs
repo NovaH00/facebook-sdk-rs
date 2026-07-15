@@ -21,7 +21,7 @@ use super::{
 
 /// Facebook OAuth client for managing app credentials and token exchange.
 ///
-/// `AppClient` is the entry point for the Facebook Login flow. It holds your
+/// `AuthClient` is the entry point for the Facebook Login flow. It holds your
 /// Facebook app's credentials and provides methods for:
 ///
 /// - Generating OAuth consent URLs
@@ -32,9 +32,9 @@ use super::{
 /// # Example
 ///
 /// ```rust,no_run
-/// use facebook_sdk_rs::auth::{AppClient, AppPermission};
+/// use facebook_sdk_rs::auth::{AuthClient, AppPermission};
 ///
-/// let app = AppClient::new(
+/// let app = AuthClient::new(
 ///     "123456789",
 ///     "app-secret",
 ///     "https://myapp.com/callback",
@@ -47,7 +47,7 @@ use super::{
 /// ).unwrap();
 /// ```
 #[derive(Debug, Clone)]
-pub struct AppClient {
+pub struct AuthClient {
     app_id: String,
     app_secret: String,
     redirect_url: String,
@@ -57,8 +57,8 @@ pub struct AppClient {
     http_client: reqwest::Client
 }
 
-impl AppClient {
-    /// Creates a new `AppClient` from Facebook app credentials.
+impl AuthClient {
+    /// Creates a new `AuthClient` from Facebook app credentials.
     ///
     /// By default, the latest stable Graph API version is used. Use [`set_version`](Self::set_version)
     /// to override it.

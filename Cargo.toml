@@ -1,6 +1,6 @@
 [package]
 name = "facebook-sdk-rs"
-version = "0.1.9"
+version = "0.1.10"
 edition = "2024"
 description = "Rust SDK for the Facebook Graph API and Messenger Platform"
 homepage = "https://github.com/NovaH00/facebook-sdk-rs"

@@ -14,12 +14,12 @@
 //! # Quick Start
 //!
 //! ```rust,no_run
-//! use facebook_sdk_rs::auth::{AppClient, AppPermission, LongLivedUserToken};
+//! use facebook_sdk_rs::auth::{AuthClient, AppPermission, LongLivedUserToken};
 //! use facebook_sdk_rs::graph::{GraphClient, UserGraphClient};
 //! use facebook_sdk_rs::api::{UserApi, PageApi};
 //!
-//! // 1. Create an AppClient with your Facebook app credentials
-//! let app_client = AppClient::new(
+//! // 1. Create an AuthClient with your Facebook app credentials
+//! let app_client = AuthClient::new(
 //!     "your-app-id",
 //!     "your-app-secret",
 //!     "https://your-redirect-url.com/callback",

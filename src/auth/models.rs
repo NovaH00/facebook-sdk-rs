@@ -12,7 +12,7 @@ pub const OAUTH_BASE_URL: &str = "https://www.facebook.com";
 ///
 /// These are the standard permissions your app can request during the
 /// Facebook Login flow. Pass a slice of these to
-/// [`AppClient::get_oauth_url`](crate::auth::AppClient::get_oauth_url).
+/// [`AuthClient::get_oauth_url`](crate::auth::AuthClient::get_oauth_url).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumString, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
@@ -193,7 +193,7 @@ impl<O, L> AccessToken<O, L> {
 /// Metadata about an access token from the `/debug_token` endpoint.
 ///
 ///
-/// Returned by [`AppClient::debug_token`](crate::auth::AppClient::debug_token).
+/// Returned by [`AuthClient::debug_token`](crate::auth::AuthClient::debug_token).
 #[derive(Debug, Clone, Deserialize)]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct AccessTokenInfo {
