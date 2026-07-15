@@ -12,18 +12,26 @@ pub enum WebhookField {
     /// Receive messages sent to the Page via Messenger.
     #[strum(serialize = "messages")]
     Messages,
+
     /// Receive delivery receipts for messages sent by the Page.
     #[strum(serialize = "message_deliveries")]
     MessageDeliveries,
+
     /// Receive reaction notifications when users react to Page messages.
     #[strum(serialize = "message_reactions")]
     MessageReactions,
+
+    /// Receive when users read Page messages.
+    #[strum(serialize = "message_reads")]
+    MessageReads,
+
     /// Receive postback callbacks from Messenger buttons.
     #[strum(serialize = "messaging_postbacks")]
     MessagingPostbacks,
-    /// Receive feed updates (posts, reactions, shares).
-    #[strum(serialize = "feed")]
-    Feed,
+
+    /// Receive when user entered the chat from an m.me link, ad, QR code, etc.
+    #[strum(serialize = "messaging_referrals")]
+    MessagingReferrals
 }
 
 /// An app installed on a Facebook Page.
