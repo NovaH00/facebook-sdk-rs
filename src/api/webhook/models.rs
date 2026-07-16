@@ -40,12 +40,12 @@ pub enum WebhookField {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct SubscribedApp {
-    /// The app's category (e.g. "Business").
-    pub category: String,
     /// The app's website URL.
     pub link: Option<String>,
     /// The app's display name.
     pub name: String,
     /// The app's Facebook ID.
     pub id: String,
+
+    pub subscribed_fields: Vec<WebhookField>,
 }

@@ -1,5 +1,6 @@
 use crate::graph::{
     PageGraphClient,
+    GraphConnection,
     GraphError,
     Method
 };
@@ -16,7 +17,10 @@ impl WebhookApi {
         Self { page_graph_client }
     }
 
-    pub async fn subscribe(&self, fields: &[WebhookField]) -> Result<(), GraphError> {
+    pub async fn subscribe(
+        &self,
+        fields: &[WebhookField]
+    ) -> Result<(), GraphError> {
         let fields_str = fields
             .iter()
             .map(|f| f.to_string())
@@ -45,12 +49,12 @@ impl WebhookApi {
         Ok(())
     }
 
-    pub async fn list(&self) -> Result<serde_json::Value, GraphError> {
-        let resp = self.page_graph_client
+    pub async fn list(&self) -> Result<Vec<SubscribedApp>, GraphError> {
+        let conn = self.page_graph_client
             .request(Method::GET, "/me/subscribed_apps")
-            .send::<serde_json::Value>()
+            .send::<GraphConnection<SubscribedApp>>()
             .await?;
 
-        Ok(resp)
+        Ok(conn.data)
     }
 }
