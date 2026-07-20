@@ -14,11 +14,13 @@ use super::models::{Conversation};
 /// # Example
 ///
 /// ```rust,no_run
+/// # async fn _test() {
 /// # use facebook_sdk_rs::api::conversation::ConversationApi;
 /// # use facebook_sdk_rs::graph::PageGraphClient;
 /// # let client: PageGraphClient = unimplemented!();
 /// let conv_api = ConversationApi::new(client);
 /// let conversations = conv_api.collect_paginated_conversations(None).await.unwrap();
+/// # }
 /// ```
 #[derive(Debug, Clone)]
 pub struct ConversationApi {

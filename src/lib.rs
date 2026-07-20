@@ -14,9 +14,11 @@
 //! # Quick Start
 //!
 //! ```rust,no_run
+//! # async fn _test() {
 //! use facebook_sdk_rs::auth::{AuthClient, AppPermission, LongLivedUserToken};
 //! use facebook_sdk_rs::graph::{GraphClient, UserGraphClient};
-//! use facebook_sdk_rs::api::{UserApi, PageApi};
+//! use facebook_sdk_rs::api::user::UserApi;
+//! use facebook_sdk_rs::api::page::PageApi;
 //!
 //! // 1. Create an AuthClient with your Facebook app credentials
 //! let app_client = AuthClient::new(
@@ -36,9 +38,10 @@
 //! let user_token: LongLivedUserToken = app_client.login("auth-code-from-callback").await.unwrap();
 //!
 //! // 4. Start making API calls
-//! let user_api = UserApi::new(user_token);
+//! let user_api = UserApi::new(UserGraphClient::new(user_token));
 //! let user = user_api.me().await.unwrap();
 //! let page_api = user_api.get_page_api();
+//! # }
 //! ```
 pub mod auth;
 pub mod graph;

@@ -16,6 +16,7 @@ use super::models::Post;
 /// # Example
 ///
 /// ```rust,no_run
+/// # async fn _test() {
 /// # use facebook_sdk_rs::api::post::PostApi;
 /// # use facebook_sdk_rs::graph::PageGraphClient;
 /// # let client: PageGraphClient = unimplemented!();
@@ -24,6 +25,7 @@ use super::models::Post;
 /// for post in &posts {
 ///     println!("{}", post.message.as_deref().unwrap_or("(no text)"));
 /// }
+/// # }
 /// ```
 #[derive(Debug, Clone)]
 pub struct PostApi {

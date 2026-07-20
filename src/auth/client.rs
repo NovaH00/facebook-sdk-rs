@@ -87,6 +87,16 @@ impl AuthClient {
         self
     }
 
+    pub fn set_graph_base_url(mut self, graph_url: impl Into<String>) -> Self {
+        self.graph_base_url = graph_url.into();
+        self
+    }
+
+    pub fn set_oauth_base_url(mut self, oauth_url: impl Into<String>) -> Self {
+        self.oauth_base_url = oauth_url.into();
+        self
+    }
+
     /// Builds the Facebook OAuth consent URL to redirect users to.
     ///
     /// The user will see the Facebook Login dialog requesting the specified
@@ -189,6 +199,7 @@ impl AuthClient {
             .map(AccessToken::new)
             .ok_or(AuthError::MissingAccessToken)
     }
+
 
     /// Exchanges an authorization code for a long-lived user access token.
     ///

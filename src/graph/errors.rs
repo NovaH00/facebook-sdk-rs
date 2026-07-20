@@ -17,9 +17,7 @@ pub enum GraphError {
     /// Facebook returned an API error response.
     #[error(
         "Facebook API error: {message} \
-        Code: {code:?}. Subcode {error_subcode:?}\
-        Trace ID: {fbtrace_id:?} \
-        Is transient: {is_transient:?}"
+        (code={code:?}, subcode={error_subcode:?}, fbtrace_id={fbtrace_id:?}, is_transient={is_transient:?})"
     )]
     Facebook {
         /// The error message from Facebook.

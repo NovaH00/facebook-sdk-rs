@@ -14,13 +14,16 @@ use super::models::User;
 /// # Example
 ///
 /// ```rust,no_run
-/// use facebook_sdk_rs::api::UserApi;
+/// # async fn _test() {
+/// use facebook_sdk_rs::api::user::UserApi;
+/// use facebook_sdk_rs::graph::{GraphClient, UserGraphClient};
 /// # use facebook_sdk_rs::auth::LongLivedUserToken;
 ///
 /// # let token: LongLivedUserToken = unimplemented!();
-/// let user_api = UserApi::new(token);
+/// let user_api = UserApi::new(UserGraphClient::new(token));
 /// let user = user_api.me().await.unwrap();
 /// println!("Hello, {}!", user.name);
+/// # }
 /// ```
 #[derive(Debug, Clone)]
 pub struct UserApi {
@@ -52,6 +55,33 @@ impl UserApi {
             .fields(User::fields())
             .send::<User>()
             .await
+    }
+
+    /// Revokes all permissions for the authenticated user's access token.
+    ///
+    /// Calls `DELETE /me/permissions`. After calling this, the token is
+    /// invalidated and the user must re-authorize your app.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError`] if the request fails or the token cannot be
+    /// revoked.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # async fn _test() {
+    /// # use facebook_sdk_rs::api::user::UserApi;
+    /// # let user_api: UserApi = unimplemented!();
+    /// user_api.revoke_permissions().await.unwrap();
+    /// # }
+    /// ```
+    pub async fn revoke_permissions(&self) -> Result<(), GraphError> {
+        self.user_graph_client
+            .request(Method::DELETE, "/me/permissions")
+            .send::<serde_json::Value>()
+            .await?;
+        Ok(())
     }
 
     /// Creates a [`PageApi`] for listing and managing the user's Pages.

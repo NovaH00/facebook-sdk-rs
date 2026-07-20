@@ -17,6 +17,7 @@ use super::schemas::SendMessageResponse;
 /// # Example
 ///
 /// ```rust,no_run
+/// # async fn _test() {
 /// # use facebook_sdk_rs::api::message::{MessageApi, MessagingType, SendMessagePayload};
 /// # use facebook_sdk_rs::graph::PageGraphClient;
 /// # let client: PageGraphClient = unimplemented!();
@@ -25,6 +26,7 @@ use super::schemas::SendMessageResponse;
 /// let messages = msg_api.collect_paginated_messages("conversation_id", None).await.unwrap();
 /// let response = msg_api.send_message("recipient_id", SendMessagePayload::Text { text: "Hello!".to_string() }, MessagingType::Response).await.unwrap();
 /// println!("Sent message ID: {}", response.message_id);
+/// # }
 /// ```
 #[derive(Debug, Clone)]
 pub struct MessageApi {

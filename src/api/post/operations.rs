@@ -15,7 +15,7 @@ use crate::api::post::Post;
 /// ```rust,no_run
 /// use facebook_sdk_rs::api::post::PostOperations;
 ///
-/// fn process_post(api: &impl PostOperations) {
+/// fn process_post(api: &(impl PostOperations + Sync)) {
 ///     api.like_post("123456789");
 /// }
 /// ```

@@ -18,6 +18,7 @@ use super::models::{Page, PageScopedUser};
 /// # Example
 ///
 /// ```rust,no_run
+/// # async fn _test() {
 /// # use facebook_sdk_rs::api::page::PageApi;
 /// # use facebook_sdk_rs::graph::UserGraphClient;
 /// # let user_client: UserGraphClient = unimplemented!();
@@ -28,6 +29,7 @@ use super::models::{Page, PageScopedUser};
 ///     let client = page_api.get_graph_client(page).unwrap();
 ///     // use client for page-scoped API calls
 /// }
+/// # }
 /// ```
 #[derive(Debug, Clone)]
 pub struct PageApi {

@@ -64,6 +64,7 @@ impl<O: Clone, L: Clone> GraphClient<O, L> {
             self.http_client.clone()
         )
     }
+
 }
 
 
@@ -76,6 +77,7 @@ impl<O: Clone, L: Clone> GraphClient<O, L> {
 /// # Example
 ///
 /// ```rust,no_run
+/// # async fn _test() {
 /// # use facebook_sdk_rs::graph::{GraphClient, Method, UserGraphClient};
 /// # use facebook_sdk_rs::auth::LongLivedUserToken;
 /// # let client: UserGraphClient = GraphClient::new(unimplemented!());
@@ -86,6 +88,7 @@ impl<O: Clone, L: Clone> GraphClient<O, L> {
 ///     .send()
 ///     .await
 ///     .unwrap();
+/// # }
 /// ```
 #[derive(Debug, Clone)]
 pub struct GraphRequestBuilder<O, L> {
@@ -119,13 +122,13 @@ impl<O, L> GraphRequestBuilder<O, L> {
     }
 
     /// Overrides the base URL (defaults to `https://graph.facebook.com`).
-    pub fn base_url(mut self, base_url: impl Into<String>) -> Self {
+    pub fn set_base_url(mut self, base_url: impl Into<String>) -> Self {
         self.graph_base_url = base_url.into();
         self
     }
 
     /// Sets the Graph API version (defaults to latest).
-    pub fn version(mut self, version: GraphVersion) -> Self {
+    pub fn set_version(mut self, version: GraphVersion) -> Self {
         self.version = version;
         self
     }
@@ -217,6 +220,7 @@ impl<O, L> GraphRequestBuilder<O, L> {
 
         Ok(response.json::<T>().await?)
     }
+
 }
 
 /// Graph client with a long-lived user access token.
