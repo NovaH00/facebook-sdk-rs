@@ -25,3 +25,13 @@ impl Post {
         ["id", "message", "story", "created_time", "updated_time", "permalink_url"]
     }
 }
+
+/// The response returned by Facebook when a post is created successfully.
+///
+/// Returned by [`PostApi::create_post`](crate::api::post::PostApi::create_post).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+pub struct CreatePostResponse {
+    /// The ID of the newly created post.
+    pub id: String,
+}

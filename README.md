@@ -10,7 +10,7 @@ and [Messenger Platform](https://developers.facebook.com/docs/messenger-platform
 - **Token debugging** — Inspect any token's validity, scopes, and expiry via `/debug_token`
 - **Pagination** — Cursor-based pagination with automatic deduplication across all list APIs
 - **Pages API** — List managed Pages, create Page-scoped API clients
-- **Posts API** — List, like, unlike, delete, and get Page posts
+- **Posts API** — List, create, like, unlike, delete, and get Page posts
 - **Conversations API** — List Messenger conversations with automatic recipient resolution
 - **Messages API** — List messages, send text replies with configurable `messaging_type`
 - **Webhooks API** — Subscribe/unsubscribe Pages to webhook fields, deserialize incoming events
@@ -27,7 +27,7 @@ facebook-sdk-rs
 └── api           — High-level domain APIs
     ├── user      — User profile (/me)
     ├── page      — Page management, token extraction
-    ├── post      — Post listing and operations (like, unlike, delete)
+    ├── post      — Post listing, creation, and operations (like, unlike, delete)
     ├── conversation — Messenger conversation listing
     ├── message   — Message history and send API
     └── webhook   — Subscription management and event deserialization
@@ -99,6 +99,47 @@ for page in &pages {
         println!("Sent: {}", response.message_id);
     }
 }
+```
+
+## Creating a Post
+
+Once you have a `PageGraphClient` (see Quick Start), use `PostApi` to publish to a Page.
+
+### Text-only post
+
+```rust
+use facebook_sdk_rs::api::post::PostApi;
+
+let post_api = PostApi::new(client.clone());
+
+let response = post_api
+    .create_post("Hello from facebook-sdk-rs!", vec![])
+    .await?;
+
+println!("Created post: {}", response.id);
+```
+
+### Post with images
+
+Pass a `Vec<String>` of public HTTPS image URLs. The SDK uploads each image as an
+unpublished photo first, then attaches them to the feed post.
+
+```rust
+use facebook_sdk_rs::api::post::PostApi;
+
+let post_api = PostApi::new(client.clone());
+
+let response = post_api
+    .create_post(
+        "Check out these photos!",
+        vec![
+            "https://example.com/photo1.jpg".to_string(),
+            "https://example.com/photo2.jpg".to_string(),
+        ],
+    )
+    .await?;
+
+println!("Created post: {}", response.id);
 ```
 
 ## API Reference
@@ -183,7 +224,8 @@ Re-authorization modifiers: `Rerequest`, `Reauthorize`, `Reauthenticate`.
 | `base_url(url)` | Overrides the default Graph API URL |
 | `version(version)` | Sets the API version |
 | `fields([...])` | Sets the `fields` parameter for field selection |
-| `query([(...)])` | Adds raw query parameters |
+| `query([(...)])` | Adds raw query parameters from a static array |
+| `query_params(params)` | Sets query parameters from a pre-built `QueryParams` value (supports dynamic keys) |
 | `limit(n)` | Sets the pagination `limit` parameter |
 | `after(cursor)` | Sets the `after` cursor for cursor-based pagination |
 | `send::<T>()` | Sends the request and deserializes the response |
@@ -265,12 +307,19 @@ Variants: `V25_0`, `V24_0`, `V23_0`, `V22_0`. Defaults to `V25_0`.
 | `first_paginated_posts(limit)` | Fetches first page of posts |
 | `next_paginated_posts(limit, current)` | Fetches next page using cursor |
 | `collect_paginated_posts(limit)` | Fetches all posts with auto-pagination |
+| `create_post(message, image_urls)` | Creates a new post with optional image attachments |
 
 #### `Post`
 
 | Method | Description |
 |--------|-------------|
 | `fields()` | Returns field names for API selection |
+
+#### `CreatePostResponse`
+
+| Field | Type |
+|-------|------|
+| `id` | `String` — the ID of the newly created post |
 
 #### `PostOperations` trait
 

@@ -34,8 +34,11 @@ impl<const N: usize> From<[&str; N]> for Fields {
 ///
 /// Used internally by [`GraphRequestBuilder`](crate::graph::GraphRequestBuilder)
 /// to accumulate parameters like `limit`, `after`, `access_token`, etc.
+///
+/// Keys are normally `&'static str`. Use [`insert_owned`](Self::insert_owned)
+/// when a key must be built at runtime (e.g. `attached_media[0][media_fbid]`).
 #[derive(Debug, Clone, Default)]
-pub struct QueryParams(Vec<(&'static str, String)>);
+pub struct QueryParams(Vec<(String, String)>);
 
 impl QueryParams {
     /// Creates an empty parameter list.
@@ -43,18 +46,31 @@ impl QueryParams {
         Self(Vec::new())
     }
 
-    /// Inserts a key-value pair into the parameter list.
+    /// Inserts a key-value pair with a static key.
     pub fn insert(
         mut self,
         key: &'static str,
         value: impl Into<String>,
     ) -> Self {
-        self.0.push((key, value.into()));
+        self.0.push((key.to_owned(), value.into()));
+        self
+    }
+
+    /// Inserts a key-value pair with a dynamically constructed key.
+    ///
+    /// Use this when the key cannot be a `&'static str`, for example when
+    /// building indexed parameters such as `attached_media[0][media_fbid]`.
+    pub fn insert_owned(
+        mut self,
+        key: impl Into<String>,
+        value: impl Into<String>,
+    ) -> Self {
+        self.0.push((key.into(), value.into()));
         self
     }
 
     /// Returns the parameters as a slice.
-    pub fn as_slice(&self) -> &[(&'static str, String)] {
+    pub fn as_slice(&self) -> &[(String, String)] {
         &self.0
     }
 }
@@ -64,7 +80,7 @@ impl<const N: usize> From<[(&'static str, &str); N]> for QueryParams {
         Self(
             params
                 .into_iter()
-                .map(|(k, v)| (k, v.to_owned()))
+                .map(|(k, v)| (k.to_owned(), v.to_owned()))
                 .collect(),
         )
     }

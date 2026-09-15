@@ -148,6 +148,16 @@ impl<O, L> GraphRequestBuilder<O, L> {
         self
     }
 
+    /// Sets the query parameters from a pre-built [`QueryParams`] value.
+    ///
+    /// Use this when parameters must be constructed dynamically (e.g. when
+    /// using [`QueryParams::insert_owned`] for indexed keys such as
+    /// `attached_media[0][media_fbid]`).
+    pub fn query_params(mut self, params: QueryParams) -> Self {
+        self.query_params = Some(params);
+        self
+    }
+
     /// Sets the `limit` parameter for paginated results.
     pub fn limit(mut self, limit: u32) -> Self {
         self.query_params = Some(
