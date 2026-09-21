@@ -205,13 +205,13 @@ impl PostApi {
 
                     resp.id
                 }
-                PostMedia::Video { url, description } => {
+                PostMedia::Video { url, caption } => {
                     let mut query = QueryParams::new()
                         .insert("file_url", url.as_str())
                         .insert("published", "false");
 
-                    if let Some(desc) = description {
-                        query = query.insert("description", desc.as_str());
+                    if let Some(caption) = caption {
+                        query = query.insert("description", caption.as_str());
                     }
 
                     let resp = self.page_graph_client

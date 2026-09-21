@@ -135,7 +135,7 @@ let response = post_api
         "Check out my trip!",
         vec![
             PostMedia::photo_with_caption("https://example.com/cover.jpg", "The beginning"),
-            PostMedia::video_with_description("https://example.com/vlog.mp4", "Walking tour"),
+            PostMedia::video_with_caption("https://example.com/vlog.mp4", "Walking tour"),
             "https://example.com/photo2.jpg".into(), // plain photo URL shorthand
         ],
     )
@@ -322,9 +322,9 @@ Variants: `V25_0`, `V24_0`, `V23_0`, `V22_0`. Defaults to `V25_0`.
 | Variant | Fields | Description |
 |---------|--------|-------------|
 | `Photo` | `url: String`, `caption: Option<String>` | Photo with optional caption |
-| `Video` | `url: String`, `description: Option<String>` | Video with optional description/caption |
+| `Video` | `url: String`, `caption: Option<String>` | Video with optional caption |
 
-Constructors: `PostMedia::photo(url)`, `PostMedia::photo_with_caption(url, caption)`, `PostMedia::video(url)`, `PostMedia::video_with_description(url, description)`. Implements `From<String>` and `From<&str>`.
+Constructors: `PostMedia::photo(url)`, `PostMedia::photo_with_caption(url, caption)`, `PostMedia::video(url)`, `PostMedia::video_with_caption(url, caption)`. Implements `From<String>` and `From<&str>`.
 
 #### `CreatePostResponse`
 
