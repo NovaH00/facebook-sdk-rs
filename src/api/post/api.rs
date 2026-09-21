@@ -30,7 +30,7 @@ use super::models::{Post, CreatePostResponse, PostMedia};
 /// ```
 #[derive(Debug, Clone)]
 pub struct PostApi {
-    page_graph_client: PageGraphClient
+    page_graph_client: PageGraphClient,
 }
 
 impl PostApi {
@@ -39,7 +39,7 @@ impl PostApi {
         page_graph_client: PageGraphClient
     ) -> Self {
         Self {
-            page_graph_client
+            page_graph_client,
         }
     }
 
@@ -132,10 +132,9 @@ impl PostApi {
 
     /// Creates a new post on the Page.
     ///
-    /// Calls `POST /me/feed`. If `media` is non-empty, each item is first
-    /// uploaded as an unpublished photo or video via `POST /me/photos` or
-    /// `POST /me/videos`, and the resulting media IDs are attached to the feed post.
-    /// An empty `media` creates a text-only post.
+    /// Calls `POST /me/feed`. If `media` is non-empty, each photo is first
+    /// uploaded as an unpublished photo via `POST /me/photos`, and the resulting
+    /// photo IDs are attached to the feed post. An empty `media` creates a text-only post.
     ///
     /// # Parameters
     ///
@@ -146,7 +145,7 @@ impl PostApi {
     ///
     /// # Errors
     ///
-    /// Returns [`GraphError`] if any media upload fails or if the feed post
+    /// Returns [`GraphError`] if any photo upload fails or if the feed post
     /// request fails.
     ///
     /// # Example
@@ -164,11 +163,10 @@ impl PostApi {
     ///     .await
     ///     .unwrap();
     ///
-    /// // Post with photos (with or without caption) and videos
+    /// // Post with photos (with or without caption)
     /// let response = post_api
     ///     .create_post("Check this out!", vec![
     ///         PostMedia::photo_with_caption("https://example.com/photo1.jpg", "First photo"),
-    ///         PostMedia::video("https://example.com/clip.mp4"),
     ///         "https://example.com/photo2.jpg".into(),
     ///     ])
     ///     .await
@@ -181,50 +179,28 @@ impl PostApi {
         message: impl Into<String>,
         media: Vec<PostMedia>,
     ) -> Result<CreatePostResponse, GraphError> {
-        // Step 1: upload each media item as unpublished photo or video, collect IDs.
+        // Step 1: upload each photo as unpublished photo, collect IDs.
         let mut media_ids: Vec<String> = Vec::with_capacity(media.len());
         for item in &media {
             #[derive(serde::Deserialize)]
             struct UploadResponse { id: String }
 
-            let media_id = match item {
-                PostMedia::Photo { url, caption } => {
-                    let mut query = QueryParams::new()
-                        .insert("url", url.as_str())
-                        .insert("published", "false");
+            let PostMedia::Photo { url, caption } = item;
+            let mut query = QueryParams::new()
+                .insert("url", url.as_str())
+                .insert("published", "false");
 
-                    if let Some(caption) = caption {
-                        query = query.insert("caption", caption.as_str());
-                    }
+            if let Some(caption) = caption {
+                query = query.insert("caption", caption.as_str());
+            }
 
-                    let resp = self.page_graph_client
-                        .request(Method::POST, "/me/photos")
-                        .query_params(query)
-                        .send::<UploadResponse>()
-                        .await?;
+            let resp = self.page_graph_client
+                .request(Method::POST, "/me/photos")
+                .query_params(query)
+                .send::<UploadResponse>()
+                .await?;
 
-                    resp.id
-                }
-                PostMedia::Video { url, caption } => {
-                    let mut query = QueryParams::new()
-                        .insert("file_url", url.as_str())
-                        .insert("published", "false");
-
-                    if let Some(caption) = caption {
-                        query = query.insert("description", caption.as_str());
-                    }
-
-                    let resp = self.page_graph_client
-                        .request(Method::POST, "/me/videos")
-                        .query_params(query)
-                        .send::<UploadResponse>()
-                        .await?;
-
-                    resp.id
-                }
-            };
-
-            media_ids.push(media_id);
+            media_ids.push(resp.id);
         }
 
         // Step 2: build the feed POST params.

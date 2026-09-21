@@ -9,7 +9,7 @@
 //! [`CreatePostResponse`] holds the ID returned by Facebook after a successful
 //! post creation.
 //!
-//! [`PostMedia`] defines photos and videos with optional captions to attach to a post.
+//! [`PostMedia`] defines photos with optional captions to attach to a post.
 
 mod api;
 mod models;

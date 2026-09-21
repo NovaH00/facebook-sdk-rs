@@ -119,11 +119,11 @@ let response = post_api
 println!("Created post: {}", response.id);
 ```
 
-### Post with photos and videos (mixed media)
+### Post with photos
 
-Pass a `Vec<PostMedia>` to attach photos or videos with optional captions. Plain `&str` or `String` URLs can also be converted automatically into `PostMedia::Photo`.
+Pass a `Vec<PostMedia>` to attach photos with optional captions. Plain `&str` or `String` URLs can also be converted automatically into `PostMedia::Photo`.
 
-The SDK uploads each item as an unpublished photo or video first, then attaches them to the feed post.
+The SDK uploads each photo as an unpublished photo first, then attaches them to the feed post.
 
 ```rust
 use facebook_sdk_rs::api::post::{PostApi, PostMedia};
@@ -135,7 +135,7 @@ let response = post_api
         "Check out my trip!",
         vec![
             PostMedia::photo_with_caption("https://example.com/cover.jpg", "The beginning"),
-            PostMedia::video_with_caption("https://example.com/vlog.mp4", "Walking tour"),
+            PostMedia::photo("https://example.com/photo1.jpg"),
             "https://example.com/photo2.jpg".into(), // plain photo URL shorthand
         ],
     )
@@ -309,7 +309,7 @@ Variants: `V25_0`, `V24_0`, `V23_0`, `V22_0`. Defaults to `V25_0`.
 | `first_paginated_posts(limit)` | Fetches first page of posts |
 | `next_paginated_posts(limit, current)` | Fetches next page using cursor |
 | `collect_paginated_posts(limit)` | Fetches all posts with auto-pagination |
-| `create_post(message, media)` | Creates a new post with optional photo/video attachments |
+| `create_post(message, media)` | Creates a new post with optional photo attachments |
 
 #### `Post`
 
@@ -322,9 +322,8 @@ Variants: `V25_0`, `V24_0`, `V23_0`, `V22_0`. Defaults to `V25_0`.
 | Variant | Fields | Description |
 |---------|--------|-------------|
 | `Photo` | `url: String`, `caption: Option<String>` | Photo with optional caption |
-| `Video` | `url: String`, `caption: Option<String>` | Video with optional caption |
 
-Constructors: `PostMedia::photo(url)`, `PostMedia::photo_with_caption(url, caption)`, `PostMedia::video(url)`, `PostMedia::video_with_caption(url, caption)`. Implements `From<String>` and `From<&str>`.
+Constructors: `PostMedia::photo(url)`, `PostMedia::photo_with_caption(url, caption)`. Implements `From<String>` and `From<&str>`.
 
 #### `CreatePostResponse`
 

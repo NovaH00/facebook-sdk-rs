@@ -47,13 +47,6 @@ pub enum PostMedia {
         /// Optional caption specifically for this image.
         caption: Option<String>,
     },
-    /// A video with a public URL and an optional caption.
-    Video {
-        /// Public URL of the video file.
-        url: String,
-        /// Optional caption specifically for this video.
-        caption: Option<String>,
-    },
 }
 
 impl PostMedia {
@@ -68,22 +61,6 @@ impl PostMedia {
     /// Creates a photo media item with a custom caption.
     pub fn photo_with_caption(url: impl Into<String>, caption: impl Into<String>) -> Self {
         Self::Photo {
-            url: url.into(),
-            caption: Some(caption.into()),
-        }
-    }
-
-    /// Creates a video media item without a caption.
-    pub fn video(url: impl Into<String>) -> Self {
-        Self::Video {
-            url: url.into(),
-            caption: None,
-        }
-    }
-
-    /// Creates a video media item with a custom caption.
-    pub fn video_with_caption(url: impl Into<String>, caption: impl Into<String>) -> Self {
-        Self::Video {
             url: url.into(),
             caption: Some(caption.into()),
         }
