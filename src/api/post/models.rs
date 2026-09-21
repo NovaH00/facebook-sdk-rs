@@ -35,3 +35,70 @@ pub struct CreatePostResponse {
     /// The ID of the newly created post.
     pub id: String,
 }
+
+/// A media item to attach to a post.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+pub enum PostMedia {
+    /// An image with a public URL and an optional caption.
+    Photo {
+        /// Public URL of the image.
+        url: String,
+        /// Optional caption specifically for this image.
+        caption: Option<String>,
+    },
+    /// A video with a public URL and an optional description/caption.
+    Video {
+        /// Public URL of the video file.
+        url: String,
+        /// Optional description specifically for this video.
+        description: Option<String>,
+    },
+}
+
+impl PostMedia {
+    /// Creates a photo media item without a caption.
+    pub fn photo(url: impl Into<String>) -> Self {
+        Self::Photo {
+            url: url.into(),
+            caption: None,
+        }
+    }
+
+    /// Creates a photo media item with a custom caption.
+    pub fn photo_with_caption(url: impl Into<String>, caption: impl Into<String>) -> Self {
+        Self::Photo {
+            url: url.into(),
+            caption: Some(caption.into()),
+        }
+    }
+
+    /// Creates a video media item without a description.
+    pub fn video(url: impl Into<String>) -> Self {
+        Self::Video {
+            url: url.into(),
+            description: None,
+        }
+    }
+
+    /// Creates a video media item with a custom description/caption.
+    pub fn video_with_description(url: impl Into<String>, description: impl Into<String>) -> Self {
+        Self::Video {
+            url: url.into(),
+            description: Some(description.into()),
+        }
+    }
+}
+
+impl From<String> for PostMedia {
+    fn from(url: String) -> Self {
+        Self::photo(url)
+    }
+}
+
+impl From<&str> for PostMedia {
+    fn from(url: &str) -> Self {
+        Self::photo(url)
+    }
+}
+
