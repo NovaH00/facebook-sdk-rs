@@ -44,4 +44,7 @@ pub enum GraphError {
     #[error("JSON error: {0}")]
     JsonError(#[from] serde_json::Error),
 
+    /// Upload error occurred during resumable upload.
+    #[error("Upload error: {0}")]
+    UploadError(String),
 }
