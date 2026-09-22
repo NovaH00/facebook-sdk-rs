@@ -132,21 +132,20 @@ impl PostApi {
 
     /// Creates a new post on the Page.
     ///
-    /// Calls `POST /me/feed`. If `media` is non-empty, each photo is first
-    /// uploaded as an unpublished photo via `POST /me/photos`, and the resulting
-    /// photo IDs are attached to the feed post. An empty `media` creates a text-only post.
+    /// Supports text, photos, or a single video:
+    /// - **Text-only post**: Pass an empty `media` slice.
+    /// - **Photo post**: Pass one or more [`PostMedia::Photo`] items.
+    /// - **Single video post**: Pass exactly one [`PostMedia::Video`] item.
     ///
     /// # Parameters
     ///
     /// * `message` — The text content of the post.
-    /// * `media` — Media items ([`PostMedia`]) to attach. Pass an empty
-    ///   `Vec` for a text-only post. Plain `&str` and `String` URLs can also be
-    ///   passed via `PostMedia` conversions.
+    /// * `media` — Media items ([`PostMedia`]) to attach.
     ///
     /// # Errors
     ///
-    /// Returns [`GraphError`] if any photo upload fails or if the feed post
-    /// request fails.
+    /// Returns [`GraphError::InvalidMedia`] if `media` contains both photos and videos,
+    /// or if it contains multiple videos. Returns [`GraphError`] if the API request fails.
     ///
     /// # Example
     ///
@@ -163,11 +162,19 @@ impl PostApi {
     ///     .await
     ///     .unwrap();
     ///
-    /// // Post with photos (with or without caption)
+    /// // Post with photos
     /// let response = post_api
     ///     .create_post("Check this out!", vec![
     ///         PostMedia::photo_with_caption("https://example.com/photo1.jpg", "First photo"),
     ///         "https://example.com/photo2.jpg".into(),
+    ///     ])
+    ///     .await
+    ///     .unwrap();
+    ///
+    /// // Post with single video
+    /// let response = post_api
+    ///     .create_post("Watch this video!", vec![
+    ///         PostMedia::video("https://example.com/clip.mp4"),
     ///     ])
     ///     .await
     ///     .unwrap();
@@ -179,13 +186,64 @@ impl PostApi {
         message: impl Into<String>,
         media: Vec<PostMedia>,
     ) -> Result<CreatePostResponse, GraphError> {
-        // Step 1: upload each photo as unpublished photo, collect IDs.
+        let photo_count = media.iter().filter(|m| matches!(m, PostMedia::Photo { .. })).count();
+        let video_count = media.iter().filter(|m| matches!(m, PostMedia::Video { .. })).count();
+
+        if photo_count > 0 && video_count > 0 {
+            return Err(GraphError::InvalidMedia(
+                "Cannot mix photos and videos in a single post. Meta Graph API only supports either photos or a single video.".to_string(),
+            ));
+        }
+
+        if video_count > 1 {
+            return Err(GraphError::InvalidMedia(
+                "Cannot attach multiple videos to a single post. Meta Graph API allows at most 1 video per post.".to_string(),
+            ));
+        }
+
+        let msg = message.into();
+
+        // Single video post: publish directly to POST /me/videos
+        if video_count == 1 {
+            let PostMedia::Video { url, caption } = media.into_iter().next().unwrap() else {
+                unreachable!();
+            };
+
+            let mut query = QueryParams::new()
+                .insert("file_url", url.as_str());
+
+            if !msg.is_empty() {
+                query = query.insert("description", msg.as_str());
+            } else if let Some(ref cap) = caption {
+                query = query.insert("description", cap.as_str());
+            }
+
+            if let Some(ref cap) = caption {
+                query = query.insert("title", cap.as_str());
+            }
+
+            #[derive(serde::Deserialize)]
+            struct VideoResponse { id: String }
+
+            let resp = self.page_graph_client
+                .request(Method::POST, "/me/videos")
+                .query_params(query)
+                .send::<VideoResponse>()
+                .await?;
+
+            return Ok(CreatePostResponse::for_video(resp.id));
+        }
+
+        // Photo or text-only post
         let mut media_ids: Vec<String> = Vec::with_capacity(media.len());
         for item in &media {
             #[derive(serde::Deserialize)]
             struct UploadResponse { id: String }
 
-            let PostMedia::Photo { url, caption } = item;
+            let PostMedia::Photo { url, caption } = item else {
+                unreachable!();
+            };
+
             let mut query = QueryParams::new()
                 .insert("url", url.as_str())
                 .insert("published", "false");
@@ -203,10 +261,9 @@ impl PostApi {
             media_ids.push(resp.id);
         }
 
-        // Step 2: build the feed POST params.
-        // attached_media[N][media_fbid] is the Graph API convention for multi-media posts.
+        // Build the feed POST params.
         let mut params = QueryParams::new()
-            .insert("message", message.into());
+            .insert("message", msg);
 
         for (i, media_id) in media_ids.iter().enumerate() {
             params = params.insert_owned(
@@ -215,11 +272,16 @@ impl PostApi {
             );
         }
 
-        self.page_graph_client
+        #[derive(serde::Deserialize)]
+        struct FeedResponse { id: String }
+
+        let resp = self.page_graph_client
             .request(Method::POST, "/me/feed")
             .query_params(params)
-            .send::<CreatePostResponse>()
-            .await
+            .send::<FeedResponse>()
+            .await?;
+
+        Ok(CreatePostResponse::for_post(resp.id))
     }
 }
 

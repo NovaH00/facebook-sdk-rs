@@ -8,15 +8,17 @@
 //! - **Conversation** — List and read Messenger conversations
 //! - **Message** — Read messages from a conversation and send replies
 //! - **Webhook** — Manage webhook subscriptions and deserialize incoming events
+//! - **Upload** — Upload large media files using Meta's Resumable Upload API
 //!
 //! # Service Chain
 //!
 //! The APIs follow a layered ownership pattern:
 //!
 //! ```text
-//! UserApi  ──→  PageApi  ──→  PostApi
-//!                       ├──→  ConversationApi  ──→  MessageApi
-//!                       └──→  WebhookApi
+//! UserApi  ──→  PageApi    ──→  PostApi
+//!          │               ├──→  ConversationApi  ──→  MessageApi
+//!          │               └──→  WebhookApi
+//!          └──→  UploadApi
 //! ```
 //!
 //! Each level holds the token type appropriate for its scope (user token for
@@ -29,3 +31,4 @@ pub mod conversation;
 pub mod message;
 pub mod models;
 pub mod webhook;
+pub mod upload;

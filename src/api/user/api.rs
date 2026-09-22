@@ -4,6 +4,7 @@ use crate::graph::{
     Method
 };
 use crate::api::page::PageApi;
+use crate::api::upload::UploadApi;
 
 use super::models::User;
 
@@ -92,5 +93,15 @@ impl UserApi {
         &self,
     ) -> PageApi {
         PageApi::new(&self.user_graph_client)
+    }
+
+    /// Creates an [`UploadApi`] for uploading files using the Resumable Upload API.
+    ///
+    /// * `app_id` — The Meta App ID associated with the upload session.
+    pub fn get_upload_api(
+        &self,
+        app_id: impl Into<String>,
+    ) -> UploadApi {
+        UploadApi::new(&self.user_graph_client, app_id)
     }
 }

@@ -1,7 +1,7 @@
 //! Rust SDK for the Facebook Graph API.
 //!
 //! Provides typed access tokens, OAuth 2.0 authentication, paginated API responses,
-//! and wrappers for Pages, Posts, Conversations, Messages, and Webhooks.
+//! and wrappers for Pages, Posts, Conversations, Messages, Webhooks, and Resumable Uploads.
 //!
 //! # Architecture
 //!
@@ -9,7 +9,7 @@
 //!
 //! - [`auth`] — OAuth 2.0 flow, token types, token debugging
 //! - [`graph`] — Graph API client, request builder, pagination, error types
-//! - [`api`] — High-level domain APIs (User, Page, Post, Conversation, Message, Webhook)
+//! - [`api`] — High-level domain APIs (User, Page, Post, Conversation, Message, Webhook, Upload)
 //!
 //! # Quick Start
 //!

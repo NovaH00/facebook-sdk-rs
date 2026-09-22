@@ -1,3 +1,4 @@
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::{Client, Method, Url};
 use serde::de::DeserializeOwned;
 
@@ -36,6 +37,7 @@ use super::{
 pub struct GraphClient<O, L> {
     access_token: AccessToken<O, L>,
     http_client: Client,
+    base_url: String,
 }
 
 impl<O: Clone, L: Clone> GraphClient<O, L> {
@@ -43,8 +45,15 @@ impl<O: Clone, L: Clone> GraphClient<O, L> {
     pub fn new(access_token: AccessToken<O, L>) -> Self {
         Self {
             access_token,
-            http_client: Client::new()
+            http_client: Client::new(),
+            base_url: GRAPH_BASE_URL.into(),
         }
+    }
+
+    /// Overrides the base URL used by this client.
+    pub fn with_base_url(mut self, base_url: impl Into<String>) -> Self {
+        self.base_url = base_url.into();
+        self
     }
 
     /// Starts building a request to the given endpoint.
@@ -63,6 +72,7 @@ impl<O: Clone, L: Clone> GraphClient<O, L> {
             endpoint.into(),
             self.http_client.clone()
         )
+        .set_base_url(self.base_url.clone())
     }
 
 }
@@ -99,6 +109,9 @@ pub struct GraphRequestBuilder<O, L> {
     endpoint: String,
     query_fields: Option<Fields>,
     query_params: Option<QueryParams>,
+    headers: HeaderMap,
+    body: Option<Vec<u8>>,
+    use_oauth_header: bool,
     http_client: Client,
 }
 
@@ -117,6 +130,9 @@ impl<O, L> GraphRequestBuilder<O, L> {
             endpoint,
             query_fields: None,
             query_params: None,
+            headers: HeaderMap::new(),
+            body: None,
+            use_oauth_header: false,
             http_client,
         }
     }
@@ -179,6 +195,30 @@ impl<O, L> GraphRequestBuilder<O, L> {
         self
     }
 
+    /// Sets an HTTP header on the request.
+    pub fn header(mut self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
+        if let (Ok(name), Ok(val)) = (
+            HeaderName::try_from(key.as_ref()),
+            HeaderValue::try_from(value.as_ref()),
+        ) {
+            self.headers.insert(name, val);
+        }
+        self
+    }
+
+    /// Sets a binary body for the request.
+    pub fn body(mut self, bytes: Vec<u8>) -> Self {
+        self.body = Some(bytes);
+        self
+    }
+
+    /// Controls whether to pass the access token via the `Authorization: OAuth <token>`
+    /// header instead of as a query parameter.
+    pub fn use_oauth_header(mut self, use_header: bool) -> Self {
+        self.use_oauth_header = use_header;
+        self
+    }
+
     /// Sends the request and deserializes the response.
     ///
     /// # Errors
@@ -187,22 +227,40 @@ impl<O, L> GraphRequestBuilder<O, L> {
     /// [`GraphError::Request`] for HTTP/transport failures, or
     /// [`GraphError::Facebook`] if Facebook returns an API error response.
     pub async fn send<T: DeserializeOwned>(self) -> Result<T, GraphError> {
+        let clean_endpoint = self.endpoint.trim_start_matches('/');
         let url = Url::parse(&format!(
-            "{}/{}/{}", self.graph_base_url, self.version, self.endpoint
+            "{}/{}/{}", self.graph_base_url, self.version, clean_endpoint
         ))?;
 
         let mut query = self.query_params.unwrap_or_default();
-        query = query.insert("access_token", self.access_token.as_str());
+        if !self.use_oauth_header {
+            query = query.insert("access_token", self.access_token.as_str());
+        }
         if let Some(fields) = self.query_fields {
             query = query.insert("fields", fields.as_slice().join(","));
         }
 
-        let response = self.http_client
+        let mut req = self.http_client
             .request(self.method, url)
-            .query(&query.as_slice())
-            .send()
-            .await?;
+            .headers(self.headers);
 
+        if self.use_oauth_header {
+            req = req.header(
+                "Authorization",
+                format!("OAuth {}", self.access_token.as_str()),
+            );
+        }
+
+        let query_slice = query.as_slice();
+        if !query_slice.is_empty() {
+            req = req.query(&query_slice);
+        }
+
+        if let Some(body) = self.body {
+            req = req.body(body);
+        }
+
+        let response = req.send().await?;
 
         let status = response.status();
         if !status.is_success() {
