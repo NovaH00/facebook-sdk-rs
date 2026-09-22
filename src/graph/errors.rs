@@ -47,4 +47,8 @@ pub enum GraphError {
     /// Upload error occurred during resumable upload.
     #[error("Upload error: {0}")]
     UploadError(String),
+
+    /// Invalid media attachment combination.
+    #[error("Invalid media: {0}")]
+    InvalidMedia(String),
 }

@@ -32,8 +32,41 @@ impl Post {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct CreatePostResponse {
-    /// The ID of the newly created post.
+    /// The ID of the newly created post or video.
     pub id: String,
+    /// The canonical public URL to view the post or video on Facebook.
+    #[serde(default)]
+    pub post_url: String,
+}
+
+impl CreatePostResponse {
+    /// Creates a response with an explicit ID and URL.
+    pub fn new(id: impl Into<String>, post_url: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            post_url: post_url.into(),
+        }
+    }
+
+    /// Constructs a response for a feed or photo post.
+    pub fn for_post(id: impl Into<String>) -> Self {
+        let id_str = id.into();
+        let post_url = format!("https://www.facebook.com/{}", id_str);
+        Self {
+            id: id_str,
+            post_url,
+        }
+    }
+
+    /// Constructs a response for a video post.
+    pub fn for_video(id: impl Into<String>) -> Self {
+        let id_str = id.into();
+        let post_url = format!("https://www.facebook.com/watch/?v={}", id_str);
+        Self {
+            id: id_str,
+            post_url,
+        }
+    }
 }
 
 /// A media item to attach to a post.
@@ -45,6 +78,13 @@ pub enum PostMedia {
         /// Public URL of the image.
         url: String,
         /// Optional caption specifically for this image.
+        caption: Option<String>,
+    },
+    /// A video with a public URL and an optional caption.
+    Video {
+        /// Public URL of the video file.
+        url: String,
+        /// Optional caption specifically for this video.
         caption: Option<String>,
     },
 }
@@ -61,6 +101,22 @@ impl PostMedia {
     /// Creates a photo media item with a custom caption.
     pub fn photo_with_caption(url: impl Into<String>, caption: impl Into<String>) -> Self {
         Self::Photo {
+            url: url.into(),
+            caption: Some(caption.into()),
+        }
+    }
+
+    /// Creates a video media item without a caption.
+    pub fn video(url: impl Into<String>) -> Self {
+        Self::Video {
+            url: url.into(),
+            caption: None,
+        }
+    }
+
+    /// Creates a video media item with a custom caption.
+    pub fn video_with_caption(url: impl Into<String>, caption: impl Into<String>) -> Self {
+        Self::Video {
             url: url.into(),
             caption: Some(caption.into()),
         }
